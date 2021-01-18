@@ -1,0 +1,19 @@
+name: anaconda_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - glob2=0.7.*
+  - h5py=2.10.*
+  - hdf5storage=0.1.*
+  - matplotlib=3.1.*
+  - more-itertools=7.2.*
+  - numba=0.51.*
+  - numpy=1.17.*
+  - pandas=0.25.*
+  - python=3.7.*
+  - scikit-learn=0.21.*
+  - scipy=1.3.*
+  - seaborn=0.9.*
+  - spyder=4.1.*
+  - spyder-terminal=0.3.*
