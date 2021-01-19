@@ -1,4 +1,4 @@
-# tuned_rsa
+# frrsa
 
 This projects provides algorithms which improve Representational Similarity Analysis (RSA). The usual approach of RSA is to correlate two Representational Dissimilarity Matrices (RDM), in which each cell gives a measure of how dissimilar two stimuli are represented by a given system (e.g., the human brain or a deep neural network). However, this might underestimate the true relationship between the RDMs, since it assumes that all measurement channels contribute equally to the establishment of stimulus-pair dissimilarity, and in turn, to dissimilarity between RDMs. Tuned RSA deploys regularised regression techniques to maximise the fit between two RDMs; the RDM's cells of one system are explained by a linear combination of the dissimilarities of the respective stimuli in all measurement channels of the other system. Importantly, every measurement channel of the explaining system receives its own weight. To counterbalance overfitting problems, nested cross-validation is used.
 
@@ -14,15 +14,15 @@ Tuned RSA is written in Python 3. You can find an exhaustive package list in the
 ### How to use
 Import the main function `from fitting.crossvalidation import tune_rsa` and run:
 ```
-predicted_RDM, predictions, unfitted_scores, scores, betas = tune_rsa(output, 
-                                                                      inputs, 
-                                                                      outer_k=5, 
-                                                                      outer_reps=10, 
-                                                                      splitter='random', 
-                                                                      hyperparams=None, 
-                                                                      score_type='pearsonr', 
-                                                                      sanity=False, 
-                                                                      rng_state=None)
+predicted_RDM_re, predictions, unfitted_scores, scores, betas, fitted_scores = tune_rsa(output, 
+                                                                                        inputs, 
+                                                                                        outer_k=5, 
+                                                                                        outer_reps=10, 
+                                                                                        splitter='random', 
+                                                                                        hyperparams=None, 
+                                                                                        score_type='pearsonr', 
+                                                                                        sanity=False, 
+                                                                                        rng_state=None)
 Arguments:
 - output: the RDM which you want to fit to. Expected format is a (condition*condition*n_output) numpy array. I n_output==1, it can be of shape (condition*condition).
 - inputs: the RDM you want to use as a predictor. Expected format is a (channel*condition) numpy array. 
@@ -38,8 +38,9 @@ Returns:
 predicted_RDM: a (condition*condition*n_output) numpy array populated with the predicted dissimilarities.
 predictions: a pandasDataFrame which, for all folds and outputs separately, holds predicted and test dissimilarities and to which object pairs they belong.
 unfitted_scores: a dictionary which holds classical RSA scores for each output, separately for different scoring methods.
-scores: a pandasDataFrame which, for all folds and outputs separately, holds the scores and hyperparameters.
+scores: a pandasDataFrame which, for all folds and outputs separately, holds the scores and hyperparameters of every outer fold.
 betas: a pandasDataFrame which, for all folds and outputs separately, holds the betas from each outer crossvalidation.
+fitted_scores: a numpy array which holds, for every output, the correlation between the predicted RDM and the output.
 
 Notes regarding language:
 - "Channel" is a generic umbrella term and can mean, for example: a voxel, an MEG measurement channel, a unit of a deep neural network layer.
