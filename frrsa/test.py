@@ -1,5 +1,5 @@
 from numpy.random import default_rng
-from fitting.crossvalidation import tune_rsa
+from fitting.crossvalidation import frrsa
 
 # Specify a seed for reproducible results.
 rng = default_rng(seed=4)
@@ -21,15 +21,15 @@ splitter = 'random'
 hyperparams = None
 score_type = 'pearsonr'
 
-predicted_RDM, predictions, unfitted_scores, crossval, betas, fitted_scores = tune_rsa(output,
-                                                                                       inputs, 
-                                                                                       outer_k, 
-                                                                                       outer_reps, 
-                                                                                       splitter, 
-                                                                                       hyperparams, 
-                                                                                       score_type, 
-                                                                                       sanity=False, 
-                                                                                       rng_state=None)
+predicted_RDM, predictions, unfitted_scores, crossval, betas, fitted_scores = frrsa(output,
+                                                                                    inputs, 
+                                                                                    outer_k, 
+                                                                                    outer_reps, 
+                                                                                    splitter, 
+                                                                                    hyperparams, 
+                                                                                    score_type, 
+                                                                                    sanity=False, 
+                                                                                    rng_state=None)
 
 
 #%% End of script

@@ -28,15 +28,15 @@ z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 #"inputs": channel*condition array.
 #"output": condition*condition array.
 
-def tune_rsa(output, \
-             inputs, \
-             outer_k=5, \
-             outer_reps=10, \
-             splitter='random', \
-             hyperparams=None, \
-             score_type='pearsonr', \
-             sanity=False, \
-             rng_state=None):
+def frrsa(output, \
+          inputs, \
+          outer_k=5, \
+          outer_reps=10, \
+          splitter='random', \
+          hyperparams=None, \
+          score_type='pearsonr', \
+          sanity=False, \
+          rng_state=None):
     """ Implements a nested cross-validation, where in each CV, RDMs are fitted."""
 #%%    
     if hyperparams is None:
