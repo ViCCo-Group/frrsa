@@ -66,19 +66,19 @@ def tune_rsa(output, \
         
         
 #%%    
-    predicted_RDM_re, predictions, scores, betas \
-        = start_cross_validation(splitter, \
-                                 outer_k, \
-                                 outer_reps, \
-                                 rng_state, \
-                                 n_conditions, 
-                                 output, \
-                                 inputs_z, \
-                                 score_type, \
-                                 predicted_RDM, \
-                                 predicted_RDM_counter, \
-                                 hyperparams, \
-                                 n_outputs)
+    predicted_RDM_re, predictions, crossval, betas \
+                    = start_cross_validation(splitter,
+                                             outer_k,
+                                             outer_reps,
+                                             rng_state,
+                                             n_conditions, 
+                                             output,
+                                             inputs_z,
+                                             score_type,
+                                             predicted_RDM,
+                                             predicted_RDM_counter,
+                                             hyperparams,
+                                             n_outputs)
             
     # Compute correlation between fitted RDMs and output RDM.
     flattend_pred_RDM = flatten_RDM(predicted_RDM_re)
@@ -91,21 +91,21 @@ def tune_rsa(output, \
     fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
 
    
-    return predicted_RDM_re, predictions, unfitted_scores, scores, betas, fitted_scores
+    return predicted_RDM_re, predictions, unfitted_scores, crossval, betas, fitted_scores
 
 
 #%%
-def start_cross_validation(splitter, \
-                           outer_k, \
-                           outer_reps, \
-                           rng_state, \
-                           n_conditions, \
-                           output, \
-                           inputs_z, \
-                           score_type,\
-                           predicted_RDM, \
-                           predicted_RDM_counter, \
-                           hyperparams, \
+def start_cross_validation(splitter,
+                           outer_k,
+                           outer_reps,
+                           rng_state,
+                           n_conditions,
+                           output,
+                           inputs_z,
+                           score_type,
+                           predicted_RDM,
+                           predicted_RDM_counter,
+                           hyperparams,
                            n_outputs):
 
     n_outer_cvs = outer_k * outer_reps
@@ -113,7 +113,7 @@ def start_cross_validation(splitter, \
     hyperparams_enlarged = hyperparams.reshape(-1,1)
     hyperparams_enlarged = np.repeat(hyperparams_enlarged, repeats=n_outputs, axis=1)
     n_hyperparams = len(hyperparams)
-    betas = np.empty((n_predictors*n_outer_cvs, n_outputs+1))  # because for counter of outer CV.
+    betas = np.empty((n_predictors*n_outer_cvs, n_outputs+1))  # +1 because for counter of outer CV.
     
     # Pre-allocate empty arrayes in which, for each outer fold, the best hyperparamter,
     # model scores, and a fold-counter will be saved, for each output.
@@ -234,12 +234,12 @@ def start_cross_validation(splitter, \
         print('Finished outer loop number: ' + str(outer_loop_count + 1))
         
         
-    # 'n' is exactly defined as above; needs to be redefined because it needs a different
-    # structure for 'scores' than for 'current_predictions'.
+    # 'n' is exactly defined as above; needs to be reassigned because it needs
+    # a different structure for 'scores' than for 'current_predictions'.
     n = np.array(list(range(n_outputs)) * n_outer_cvs * n_models)+1
-    scores = pd.DataFrame(data=np.array([score, model_type, fold, hyperparameter, n]).T, \
+    crossval = pd.DataFrame(data=np.array([score, model_type, fold, hyperparameter, n]).T, \
                               columns=['score', 'model_type', 'fold', 'hyperparameter', 'n'])
-    scores.replace(to_replace={'model_type': {1: 'base', 2: 'fitted'}}, inplace=True)
+    crossval.replace(to_replace={'model_type': {1: 'base', 2: 'fitted'}}, inplace=True)
 
     predictions = pd.DataFrame(data=np.delete(predictions, 0, 0), \
                                columns=['y_test', 'y_regularized', 'y_baseline', 'n', 'fold', 'first_obj', 'second_obj'])
@@ -250,7 +250,7 @@ def start_cross_validation(splitter, \
     # Collapse the RDMs along the diagonal, sum & divide, put pack in array.
     predicted_RDM_re = collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter)
 
-    return predicted_RDM_re, predictions, scores, betas
+    return predicted_RDM_re, predictions, crossval, betas
 
 
 
