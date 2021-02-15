@@ -8,7 +8,7 @@ Created on Fri Oct 16 16:47:07 2020
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
-from fitting.fracridge import fracridge
+from frrsa.frrsa.fitting.fracridge import fracridge
 
 z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 

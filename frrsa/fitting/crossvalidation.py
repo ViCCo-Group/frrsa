@@ -11,11 +11,11 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from helper.classical_RSA import flatten_RDM, make_RDM
-from helper.data_splitter import data_splitter
-from helper.hadamard import hadamard_products
-from fitting.scoring import scoring, scoring_unfitted
-from fitting.fitting import baseline_model, regularized_model, find_hyperparameters
+from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
+from frrsa.frrsa.helper.data_splitter import data_splitter
+from frrsa.frrsa.helper.hadamard import hadamard_products
+from frrsa.frrsa.fitting.scoring import scoring, scoring_unfitted
+from frrsa.frrsa.fitting.fitting import baseline_model, regularized_model, find_hyperparameters
 # import matplotlib as mpl
 # Suppress printing figures to a display.
 # mpl.use('Agg')
