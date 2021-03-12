@@ -6,7 +6,7 @@ This projects provides algorithms which improve Representational Similarity Anal
 ## Getting Started
 
 ### Prerequisites
-FRRSA is written in Python 3. You can find an exhaustive package list in the [anaconda-env_tuned-rsa.yml](https://github.com/PhilippKaniuth/tuned_rsa/blob/main/anaconda-env-specs_tuned-rsa.yml). Use the [Anaconda distribution for Python 3.7](https://www.anaconda.com/distribution/#download-section): with the help of the environment file, you can then set up an Anaconda environment which should allow you to run the algorithms.
+FRRSA is written in Python 3. You can find an exhaustive package list in the [anaconda-env_tuned-rsa.yml](https://github.com/PhilippKaniuth/tuned_rsa/blob/main/anaconda-env-specs_tuned-rsa.yml). Use the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section): with the help of the environment file, you can then set up an Anaconda environment which should allow you to run the algorithms.
 
 ### Installing
 
