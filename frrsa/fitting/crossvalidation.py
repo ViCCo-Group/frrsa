@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+
 #TODO: remove the following imports and conditionals before publicising repo.
 from pathlib import Path
 import os
@@ -62,10 +63,8 @@ def frrsa(output, \
     except IndexError:
         n_outputs = 1
 
-    predicted_RDM, predicted_RDM_counter = preallocate_predictions(n_conditions, n_outputs)
     y_unfitted = flatten_RDM(output)
     x_unfitted = flatten_RDM(make_RDM(inputs))
-    inputs_z = z_scale.fit_transform(inputs)
  
     # Unfitted scores are non-crossvalidated scores between the complete 
     # y_unfitted and x_unfitted, i.e., a classical RSA.
@@ -73,177 +72,12 @@ def frrsa(output, \
     key_list = ['pearsonr', 'spearmanr', 'RSS']
     for key in key_list:
         unfitted_scores[key] = scoring_unfitted(y_unfitted, x_unfitted, key)
-        
-        
+             
 #%%    
-    predicted_RDM_re, predictions, crossval, betas \
-                    = start_cross_validation(splitter,
-                                             outer_k,
-                                             outer_reps,
-                                             rng_state,
-                                             n_conditions, 
-                                             output,
-                                             inputs_z,
-                                             score_type,
-                                             predicted_RDM,
-                                             predicted_RDM_counter,
-                                             hyperparams,
-                                             n_outputs)
-            
-    # Compute correlation between fitted RDMs and output RDM.
-    flattend_pred_RDM = flatten_RDM(predicted_RDM_re)
-    
-    del_ind = np.where(flattend_pred_RDM[:,0]==9999)[0]
-    
-    flattend_pred_RDM_del = np.delete(flattend_pred_RDM, del_ind, axis=0)
-    y_unfitted_del = np.delete(y_unfitted, del_ind, axis=0)
-
-    fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
-
-   
-    return predicted_RDM_re, predictions, unfitted_scores, crossval, betas, fitted_scores
-
-
-#%%
-def start_cross_validation(splitter,
-                           outer_k,
-                           outer_reps,
-                           rng_state,
-                           n_conditions,
-                           output,
-                           inputs_z,
-                           score_type,
-                           predicted_RDM,
-                           predicted_RDM_counter,
-                           hyperparams,
-                           n_outputs):
-
     n_outer_cvs = outer_k * outer_reps
-    n_predictors = inputs_z.shape[0] + 1 # +1 because intercept.
-    hyperparams_enlarged = hyperparams.reshape(-1,1)
-    hyperparams_enlarged = np.repeat(hyperparams_enlarged, repeats=n_outputs, axis=1)
-    n_hyperparams = len(hyperparams)
-    betas = np.empty((n_predictors*n_outer_cvs, n_outputs+1))  # +1 because for counter of outer CV.
-    
-    # Pre-allocate empty arrayes in which, for each outer fold, the best hyperparamter,
-    # model scores, and a fold-counter will be saved, for each output.
     n_models = 2 # baseline and regularized model.
-    score = np.empty(n_outer_cvs * n_outputs * n_models)
-    model_type = np.empty(n_outer_cvs * n_outputs * n_models)
-    fold = np.empty(n_outer_cvs * n_outputs * n_models)
-    hyperparameter = np.empty(n_outer_cvs * n_outputs * n_models)
-    
-    # Pre-allocate an empty array in which all predictions of the fitted and
-    # baseline model, the resepective y_test, factors denoting fold and output
-    # and the pairs to which predictions belong will be saved.
-    predictions = np.zeros((1,7))
+    predictions, betas, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter = start_outer_cross_validation(n_conditions, splitter, rng_state, outer_k, outer_reps, n_outputs, inputs, output, score_type, hyperparams, n_outer_cvs, n_models)
 
-    # Set up outer cross-validation.
-    outer_cv = data_splitter(splitter, outer_k, outer_reps, random_state=rng_state)
-    outer_loop_count = -1
-    list_of_indices = list(range(n_conditions))
-
-    for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
-
-        outer_loop_count += 1
-
-        # Set up inner cross-validation.
-        inner_k, inner_reps = 5, 5
-        inner_cv = data_splitter(splitter, inner_k, inner_reps, random_state=rng_state)
-        inner_loop_count = -1
-
-        # Preallocate an empty array in which the model-scores for each hyperparamter
-        # for each inner cross-validation will be put.
-        inner_cvs = inner_k * inner_reps
-        inner_hyperparams_scores = np.empty((n_hyperparams, n_outputs, inner_cvs))
-
-        # NOTE: In the following loop, rkf.split is applied to the outer_train_indices!
-        for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
-
-            inner_loop_count += 1
-            train_idx, test_idx = outer_train_indices[inner_train_indices], outer_train_indices[inner_test_indices]
-            
-            score_in = fit_and_score_in(inputs_z, output, train_idx, test_idx, score_type, hyperparams)
-                        
-            inner_hyperparams_scores[:, :, inner_loop_count] = score_in
-
-        # Evalute which hyperparamter(s) is(are) the best for the current
-        # outer fold.
-        inner_hyperparams_scores_avgs = np.mean(inner_hyperparams_scores, axis=2)
-        best_hyperparam_index = np.where(inner_hyperparams_scores_avgs == \
-                                         np.amax(inner_hyperparams_scores_avgs, \
-                                                 axis=0))
-        output_order = best_hyperparam_index[1]
-        best_hyperparam = hyperparams_enlarged[best_hyperparam_index][output_order]
-        # Note: "best_hyperparam" gives the best fraction for each output, 
-        # sorted in the same order as the outputs were supplied in "outputs".
-
-        # Compute y_train and y_test for baseline and regularised model.
-        y_train, y_test = vectorise_rdm_to_train_and_test(outer_train_indices, outer_test_indices, output)
-
-        # Fit and score baseline model.
-        start_idx = outer_loop_count * n_outputs * n_models
-        score[start_idx:start_idx+n_outputs], y_baseline = fit_and_score_baseline(
-                                                                    inputs_z, \
-                                                                    y_train, \
-                                                                    y_test, \
-                                                                    outer_train_indices, \
-                                                                    outer_test_indices, \
-                                                                    score_type)
-        model_type[start_idx:start_idx+n_outputs] = 1 # will be a label later.
-        fold[start_idx:start_idx+n_outputs] = outer_loop_count+1
-        hyperparameter[start_idx:start_idx+n_outputs] = None
-            
-            
-        # Fit and score regularised model.
-        start_idx += n_outputs
-        score[start_idx:start_idx+n_outputs], \
-        first_pair_idx, \
-        second_pair_idx, \
-        y_regularized, \
-        beta_unstandardized = fit_and_score_out(inputs_z, y_train, y_test, \
-                                                outer_train_indices, outer_test_indices, \
-                                                score_type, best_hyperparam)
-        model_type[start_idx:start_idx+n_outputs] = 2
-        fold[start_idx:start_idx+n_outputs] = outer_loop_count+1
-        hyperparameter[start_idx:start_idx+n_outputs] = best_hyperparam
-        
-        # Put each predicted dissimilarity in a dissimilarity matrix in which
-        # all predictions of all outer CVs are collected.
-        first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
-                                          outer_test_indices[second_pair_idx]
-        predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
-        predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1
-        
-        
-        # Save all betas of the regularized model next to a counter for the outer loop.
-        row_start = outer_loop_count * n_predictors
-        row_end = (outer_loop_count + 1) * n_predictors
-        betas[row_start:row_end, :-1] = beta_unstandardized
-        betas[row_start:row_end, -1] = outer_loop_count+1
-        
-        # Save all predictions of the current outer CV with extra info.
-        # Note: 'n' is a numerical variable; if n_outputs > 1 it either denotes
-            # participants (if output kind is MRI or behavior) or time points (MEG),
-            # or DNN layer.
-        n = np.empty((y_test.shape))
-        n[:,:] = list(range(n_outputs))
-        n = n.reshape(len(n)*n_outputs, order='F')+1
-
-        y_test = y_test.reshape(len(y_test)*n_outputs, order='F') #make all ys 1D.
-        y_regularized = y_regularized.reshape(len(y_regularized)*n_outputs, order='F')
-        y_baseline = y_baseline.reshape(len(y_baseline)*n_outputs, order='F')
-
-        first_pair_obj = np.tile(first_pair_obj, n_outputs)
-        second_pair_obj = np.tile(second_pair_obj, n_outputs)
-
-        fold_pred = np.array([outer_loop_count+1] * len(y_test))
-        current_predictions = np.array([y_test, y_regularized, y_baseline, n, fold_pred, first_pair_obj, second_pair_obj]).T
-        predictions = np.concatenate((predictions, current_predictions), axis=0)
-
-        print('Finished outer loop number: ' + str(outer_loop_count + 1))
-        
-        
     # 'n' is exactly defined as above; needs to be reassigned because it needs
     # a different structure for 'scores' than for 'current_predictions'.
     n = np.array(list(range(n_outputs)) * n_outer_cvs * n_models)+1
@@ -260,8 +94,197 @@ def start_cross_validation(splitter,
     # Collapse the RDMs along the diagonal, sum & divide, put pack in array.
     predicted_RDM_re = collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter)
 
-    return predicted_RDM_re, predictions, crossval, betas
+    # Compute correlation between fitted RDMs and output RDM.
+    flattend_pred_RDM = flatten_RDM(predicted_RDM_re)
+    
+    del_ind = np.where(flattend_pred_RDM[:,0]==9999)[0]
+    
+    flattend_pred_RDM_del = np.delete(flattend_pred_RDM, del_ind, axis=0)
+    y_unfitted_del = np.delete(y_unfitted, del_ind, axis=0)
 
+    fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
+   
+    return predicted_RDM_re, predictions, unfitted_scores, crossval, betas, fitted_scores
+
+def start_inner_cross_validation(splitter, rng_state, n_hyperparams, n_outputs, outer_train_indices, inputs_z, output, score_type, hyperparams):
+    # Set up inner cross-validation.
+    inner_k, inner_reps = 5, 5
+    inner_cv = data_splitter(splitter, inner_k, inner_reps, random_state=rng_state)
+
+    # Preallocate an empty array in which the model-scores for each hyperparamter
+    # for each inner cross-validation will be put.
+    inner_cvs = inner_k * inner_reps
+    inner_hyperparams_scores = np.empty((n_hyperparams, n_outputs, inner_cvs))
+
+    # NOTE: In the following loop, rkf.split is applied to the outer_train_indices!
+    inner_loop_count = -1
+    for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
+        inner_loop_count += 1
+        train_idx, test_idx = outer_train_indices[inner_train_indices], outer_train_indices[inner_test_indices]
+            
+        score_in = fit_and_score_in(inputs_z, output, train_idx, test_idx, score_type, hyperparams)
+                        
+        inner_hyperparams_scores[:, :, inner_loop_count] = score_in
+    return inner_hyperparams_scores
+
+def evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams_enlarged):
+    # Evalute which hyperparamter(s) is(are) the best for the current
+    # outer fold.
+    inner_hyperparams_scores_avgs = np.mean(inner_hyperparams_scores, axis=2)
+    best_hyperparam_index = np.where(inner_hyperparams_scores_avgs == \
+                                     np.amax(inner_hyperparams_scores_avgs, \
+                                     axis=0))
+    output_order = best_hyperparam_index[1]
+    best_hyperparam = hyperparams_enlarged[best_hyperparam_index][output_order]
+    return best_hyperparam
+
+def run_outer_cross_validation_batch(splitter, 
+                                     rng_state, 
+                                     n_hyperparams, 
+                                     n_outputs, 
+                                     outer_train_indices, 
+                                     inputs_z, 
+                                     output, 
+                                     score_type, 
+                                     hyperparams, 
+                                     hyperparams_enlarged, 
+                                     outer_test_indices, 
+                                     outer_loop_count):
+    # Start inner cross validation
+    inner_hyperparams_scores = start_inner_cross_validation(splitter, 
+                                                            rng_state, 
+                                                            n_hyperparams, 
+                                                            n_outputs, 
+                                                            outer_train_indices, 
+                                                            inputs_z, 
+                                                            output, 
+                                                            score_type, 
+                                                            hyperparams)
+    
+    # Note: "best_hyperparam" gives the best fraction for each output, 
+    # sorted in the same order as the outputs were supplied in "outputs".
+    best_hyperparam = evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams_enlarged)
+    
+    # Compute y_train and y_test for baseline and regularised model.
+    y_train, y_test = vectorise_rdm_to_train_and_test(outer_train_indices, outer_test_indices, output)
+
+    # Fit and score baseline model.
+    baseline_score, y_baseline = fit_and_score_baseline(inputs_z, 
+                                                        y_train, 
+                                                        y_test, 
+                                                        outer_train_indices, 
+                                                        outer_test_indices, 
+                                                        score_type)
+    
+    # Fit and score regularised model.
+    regularized_score, first_pair_idx, second_pair_idx, y_regularized, beta_unstandardized = fit_and_score_out(inputs_z, y_train, y_test,
+                                                                                                               outer_train_indices, outer_test_indices, 
+                                                                                                               score_type, best_hyperparam)
+    # Put each predicted dissimilarity in a dissimilarity matrix in which
+    # all predictions of all outer CVs are collected.
+    first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
+                                        outer_test_indices[second_pair_idx]
+    
+    # Save all predictions of the current outer CV with extra info.
+    # Note: 'n' is a numerical variable; if n_outputs > 1 it either denotes
+    # participants (if output kind is MRI or behavior) or time points (MEG),
+    # or DNN layer.
+    n = np.empty((y_test.shape))
+    n[:,:] = list(range(n_outputs))
+    n = n.reshape(len(n)*n_outputs, order='F')+1
+
+    y_test_reshaped = y_test.reshape(len(y_test)*n_outputs, order='F') #make all ys 1D.
+    y_regularized_reshaped = y_regularized.reshape(len(y_regularized)*n_outputs, order='F')
+    y_baseline_reshaped = y_baseline.reshape(len(y_baseline)*n_outputs, order='F')
+
+    first_pair_obj_tiled = np.tile(first_pair_obj, n_outputs)
+    second_pair_obj_tiled = np.tile(second_pair_obj, n_outputs)
+
+    fold_pred = np.array([outer_loop_count+1] * len(y_test_reshaped))
+    current_predictions = np.array([y_test_reshaped, y_regularized_reshaped, y_baseline_reshaped, n, fold_pred, first_pair_obj_tiled, second_pair_obj_tiled]).T
+
+    return current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, regularized_score, best_hyperparam, beta_unstandardized
+
+def start_outer_cross_validation(n_conditions, 
+                                 splitter, 
+                                 rng_state, 
+                                 outer_k, 
+                                 outer_reps, 
+                                 n_outputs, 
+                                 inputs, 
+                                 output, 
+                                 score_type, 
+                                 hyperparams,
+                                 n_outer_cvs,
+                                 n_models):
+    predicted_RDM, predicted_RDM_counter = preallocate_predictions(n_conditions, n_outputs)
+    inputs_z = z_scale.fit_transform(inputs)
+
+    n_predictors = inputs_z.shape[0] + 1 # +1 because intercept.
+    hyperparams_enlarged = hyperparams.reshape(-1,1)
+    hyperparams_enlarged = np.repeat(hyperparams_enlarged, repeats=n_outputs, axis=1)
+    n_hyperparams = len(hyperparams)
+    betas = np.empty((n_predictors*n_outer_cvs, n_outputs+1))  # +1 because for counter of outer CV.
+    
+    # Pre-allocate empty arrayes in which, for each outer fold, the best hyperparamter,
+    # model scores, and a fold-counter will be saved, for each output.
+    score = np.empty(n_outer_cvs * n_outputs * n_models)
+    model_type = np.empty(n_outer_cvs * n_outputs * n_models)
+    fold = np.empty(n_outer_cvs * n_outputs * n_models)
+    hyperparameter = np.empty(n_outer_cvs * n_outputs * n_models)
+    
+    # Pre-allocate an empty array in which all predictions of the fitted and
+    # baseline model, the resepective y_test, factors denoting fold and output
+    # and the pairs to which predictions belong will be saved.
+    predictions = np.zeros((1,7))
+
+    # Set up outer cross-validation.
+    outer_cv = data_splitter(splitter, outer_k, outer_reps, random_state=rng_state)
+    outer_loop_count = -1
+    list_of_indices = list(range(n_conditions))
+
+    for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
+        outer_loop_count += 1
+        current_predictions, y_regularized, \
+        first_pair_obj, second_pair_obj, baseline_score, \
+        regularized_score, best_hyperparam, beta_unstandardized = run_outer_cross_validation_batch(splitter, 
+                                                                                                    rng_state, 
+                                                                                                    n_hyperparams, 
+                                                                                                    n_outputs, 
+                                                                                                    outer_train_indices, 
+                                                                                                    inputs_z, 
+                                                                                                    output, 
+                                                                                                    score_type, 
+                                                                                                    hyperparams, 
+                                                                                                    hyperparams_enlarged, 
+                                                                                                    outer_test_indices, 
+                                                                                                    outer_loop_count)
+        predictions = np.concatenate((predictions, current_predictions), axis=0)
+        
+        start_idx = outer_loop_count * n_outputs * n_models
+        score[start_idx:start_idx+n_outputs] = baseline_score
+        model_type[start_idx:start_idx+n_outputs] = 1 # will be a label later.
+        fold[start_idx:start_idx+n_outputs] = outer_loop_count+1
+        hyperparameter[start_idx:start_idx+n_outputs] = None
+            
+        start_idx += n_outputs
+        score[start_idx:start_idx+n_outputs] = regularized_score
+        model_type[start_idx:start_idx+n_outputs] = 2
+        fold[start_idx:start_idx+n_outputs] = outer_loop_count+1
+        hyperparameter[start_idx:start_idx+n_outputs] = best_hyperparam
+
+        # Save all betas of the regularized model next to a counter for the outer loop.
+        row_start = outer_loop_count * n_predictors
+        row_end = (outer_loop_count + 1) * n_predictors
+        betas[row_start:row_end, :-1] = beta_unstandardized
+        betas[row_start:row_end, -1] = outer_loop_count+1
+
+        predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
+        predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1
+        
+        print('Finished outer loop number: ' + str(outer_loop_count + 1))
+        
+    return predictions, betas, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter
 
 
 #%%
@@ -325,10 +348,10 @@ def fit_and_score_out(inputs_z, y_train, y_test, train_idx, test_idx, score_type
     X_train, X_test, first_pair_idx, second_pair_idx = compute_hadamard_and_transpose(inputs_z, train_idx, test_idx)
     
     # Fit model and get predictions and parameters.
-    y_pred, beta_unstandardized = regularized_model(X_train, \
-                                                    X_test, \
-                                                    y_train, \
-                                                    y_test, \
+    y_pred, beta_unstandardized = regularized_model(X_train, 
+                                                    X_test, 
+                                                    y_train, 
+                                                    y_test, 
                                                     hyperparams)
     # Based on predictions and test data, evaluate fit.
     score = scoring(y_test, y_pred, score_type=score_type)
@@ -368,9 +391,3 @@ def preallocate_predictions(n_conditions, n_outputs):
 
 
 #%% End of script.
-
-
-
-
-
-
