@@ -26,13 +26,13 @@ predicted_RDM, predictions, unfitted_scores, crossval, betas, fitted_scores = fr
                                                                                     sanity=False, 
                                                                                     rng_state=None)
 Arguments:
-- output: the RDM which you want to fit to. Expected format is a (condition*condition*n_output) numpy array. I n_output==1, it can be of shape (condition*condition).
+- output: the RDM which you want to fit to. Expected format is a (condition*condition*n_output) numpy array. If n_output==1, it can be of shape (condition*condition).
 - inputs: the RDM you want to use as a predictor. Expected format is a (channel*condition) numpy array. 
 - outer_k: the fold size of the outer crossvalidation.
 - outer_reps: how often the outer k-fold is repeated.
 - splitter: how the data shall be split. If "random", data is split randomly. If "kfold", a classical k-fold crossvalidation is performed.
 - hyperparams: which hyperparameters you want to check for the fractional ridge regression (see paper by Rokem & Kay (2020) below). If "None", a sensible default is chosen internally.
-- score_type: how your predicted values shall be scored.
+- score_type: how your predicted dissimilarity values shall be scored.
 - sanity: ignore. Keep the default.
 - rng_state: ignore. Keep the default.
 
