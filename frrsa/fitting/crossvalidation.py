@@ -11,11 +11,21 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from frrsa.helper.classical_RSA import flatten_RDM, make_RDM
-from frrsa.helper.data_splitter import data_splitter
-from frrsa.helper.hadamard import hadamard_products
-from frrsa.fitting.scoring import scoring, scoring_unfitted
-from frrsa.fitting.fitting import baseline_model, regularized_model, find_hyperparameters
+#TODO: remove the following imports and conditionals before publicising repo.
+from pathlib import Path
+import os
+if 'dev' not in str(Path(os.getcwd()).parent):
+    from helper.classical_RSA import flatten_RDM, make_RDM
+    from helper.data_splitter import data_splitter
+    from helper.hadamard import hadamard_products
+    from fitting.scoring import scoring, scoring_unfitted
+    from fitting.fitting import baseline_model, regularized_model, find_hyperparameters
+else:
+    from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
+    from frrsa.frrsa.helper.data_splitter import data_splitter
+    from frrsa.frrsa.helper.hadamard import hadamard_products
+    from frrsa.frrsa.fitting.scoring import scoring, scoring_unfitted
+    from frrsa.frrsa.fitting.fitting import baseline_model, regularized_model, find_hyperparameters
 # import matplotlib as mpl
 # Suppress printing figures to a display.
 # mpl.use('Agg')

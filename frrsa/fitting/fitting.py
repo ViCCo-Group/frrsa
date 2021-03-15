@@ -8,7 +8,14 @@ Created on Fri Oct 16 16:47:07 2020
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
-from frrsa.fitting.fracridge import fracridge
+
+#TODO: remove the following imports and conditionals before publicising repo.
+from pathlib import Path
+import os
+if 'dev' not in str(Path(os.getcwd()).parent):
+    from fitting.fracridge import fracridge
+else:
+    from frrsa.frrsa.fitting.fracridge import fracridge
 
 z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 
@@ -82,7 +89,7 @@ def find_hyperparameters(X_train, X_test, y_train, y_test, fracs=None):
 
     X_train, X_train_means, X_train_stds, X_test, X_test_z, y_train, y_train_mean, n_outputs, y_predicted, beta_standardized = prepare_variables(X_train, X_test, y_train, y_test)
 
-    y_predicted, beta_unstandardized, evaluated_alphas = fracridge(X_train, X_test_z, y_train, fracs, betas_wanted=False)
+    y_predicted, beta_unstandardized, evaluated_alphas = fracridge(X_train, X_test_z, y_train, fracs, tol=1e-10, jit=True, betas_wanted=False)
     
     y_predicted += y_train_mean
     
