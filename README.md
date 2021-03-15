@@ -6,7 +6,7 @@ This projects provides algorithms which improve Representational Similarity Anal
 ## Getting Started
 
 ### Prerequisites
-FRRSA is written in Python 3. You can find an exhaustive package list in the [anaconda-env_tuned-rsa.yml](https://github.com/PhilippKaniuth/tuned_rsa/blob/main/anaconda-env-specs_tuned-rsa.yml). Use the [Anaconda distribution for Python 3.7](https://www.anaconda.com/distribution/#download-section): with the help of the environment file, you can then set up an Anaconda environment which should allow you to run the algorithms.
+FRRSA is written in Python 3. You can find an exhaustive package list in the [anaconda-env_tuned-rsa.yml](https://github.com/PhilippKaniuth/tuned_rsa/blob/main/anaconda-env-specs_tuned-rsa.yml). Use the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section): with the help of the environment file, you can then set up an Anaconda environment which should allow you to run the algorithms.
 
 ### Installing
 
@@ -26,13 +26,13 @@ predicted_RDM, predictions, unfitted_scores, crossval, betas, fitted_scores = fr
                                                                                     sanity=False, 
                                                                                     rng_state=None)
 Arguments:
-- output: the RDM which you want to fit to. Expected format is a (condition*condition*n_output) numpy array. I n_output==1, it can be of shape (condition*condition).
+- output: the RDM which you want to fit to. Expected format is a (condition*condition*n_output) numpy array. If n_output==1, it can be of shape (condition*condition).
 - inputs: the RDM you want to use as a predictor. Expected format is a (channel*condition) numpy array. 
 - outer_k: the fold size of the outer crossvalidation.
 - outer_reps: how often the outer k-fold is repeated.
 - splitter: how the data shall be split. If "random", data is split randomly. If "kfold", a classical k-fold crossvalidation is performed.
 - hyperparams: which hyperparameters you want to check for the fractional ridge regression (see paper by Rokem & Kay (2020) below). If "None", a sensible default is chosen internally.
-- score_type: how your predicted values shall be scored.
+- score_type: how your predicted dissimilarity values shall be scored.
 - sanity: ignore. Keep the default.
 - rng_state: ignore. Keep the default.
 
