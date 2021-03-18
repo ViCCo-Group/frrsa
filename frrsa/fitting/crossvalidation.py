@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from pathlib import Path
 import os
 print(str(Path(os.getcwd())))
-if 'dev' not in str(Path(os.getcwd()).parent):
+if ('dev' not in str(Path(os.getcwd()).parent)) or ('draco' not in str(Path(os.getcwd()).parent)) or ('cobra' not in str(Path(os.getcwd()).parent)):
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
     from helper.hadamard import hadamard_products
