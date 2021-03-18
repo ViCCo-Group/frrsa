@@ -14,6 +14,7 @@ from sklearn.preprocessing import StandardScaler
 #TODO: remove the following imports and conditionals before publicising repo.
 from pathlib import Path
 import os
+print(str(Path(os.getcwd())))
 if 'dev' not in str(Path(os.getcwd()).parent):
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
