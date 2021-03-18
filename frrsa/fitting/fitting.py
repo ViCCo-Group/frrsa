@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression
 #TODO: remove the following imports and conditionals before publicising repo.
 from pathlib import Path
 import os
-if 'dev' not in str(Path(os.getcwd()).parent):
+if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
     from fitting.fracridge import fracridge
 else:
     from frrsa.frrsa.fitting.fracridge import fracridge
