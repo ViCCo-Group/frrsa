@@ -1,6 +1,6 @@
 # Import packages.
 import numpy as np
-from scipy.stats import spearmanr, pearsonr
+from scipy.stats import spearmanr, pearsonr, rankdata
 
 #%% The function 'make_RDM' requires as its only argument a numpy array.
 # In that array, each column is one condition, each row one measurement channel.
@@ -70,3 +70,37 @@ def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlati
     corr, p_value = correlate_RDMs(dissim_vec_1, dissim_vec_2, correlation)
 
     return corr, p_value
+
+#%%
+def noise_ceiling(reference_rdms, correlation='pearsonr'):
+    n_subjects = reference_rdms.shape[2]
+    
+    reference_rdms = flatten_RDM(reference_rdms)
+    
+    if correlation=='pearsonr':
+        reference_rdms = (reference_rdms - reference_rdms.mean(0)) / reference_rdms.std(0)
+    elif correlation=='spearmanr':
+        reference_rdms = rankdata(reference_rdms, axis=0)
+    #TODO: maybe implement Kendall's tau_a
+    
+    reference_rdm_average = np.mean(reference_rdms, axis=1)
+    
+    upper_bound = 0
+    lower_bound = 0
+    
+    for n in range(n_subjects):
+        
+        index = list(range(n_subjects))
+        index.remove(n)
+        rdm_n = reference_rdms[:,n]
+        reference_rdm_average_loo = np.mean(reference_rdms[:,index], axis=1)
+        upper_bound += np.corrcoef(reference_rdm_average, rdm_n)[0][1]
+        lower_bound += np.corrcoef(reference_rdm_average_loo, rdm_n)[0][1]
+        #TODO: maybe implement Kendall's tau_a
+        
+    upper_bound /= n_subjects
+    lower_bound /= n_subjects
+    
+    return upper_bound, lower_bound
+
+
