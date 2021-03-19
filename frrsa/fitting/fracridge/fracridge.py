@@ -13,7 +13,8 @@
 #     - the function "fracridge" now contains the argument "betas_wanted" to
 #         specify whether coefs shall be output at all.
 #     - other functions defined in the original module were deleted, since they
-#         are not needed in the framework of FR-RSA.
+#         are not needed in the framework of my project FR-RSA.
+# Last updated: 1st of February 2021
 # =============================================================================
 
 import numpy as np
