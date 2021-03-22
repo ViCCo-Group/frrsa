@@ -42,7 +42,7 @@ def flatten_RDM(rdms: np.ndarray) -> np.ndarray:
         mapfunc = partial(squareform, checks=False)
         V = np.array(list(map(mapfunc, np.moveaxis(rdms, -1, 0)))).T
     elif rdms.ndim==2:
-        V = rdms[np.triu_indices(rdms.shape[0], k=1)]
+        V = rdms[np.triu_indices(rdms.shape[0], k=1)].reshape(-1,1)
     return V
 
 
