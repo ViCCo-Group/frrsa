@@ -11,9 +11,9 @@ from scipy.spatial.distance import squareform
 # the dissimilarity matrix.  For an explanation in which way 'dissim_vec' is
 # put together, see the function 'reduce_RDM'.
 
-def make_RDM(activity_pattern_matrix, distance='Pearson'):
+def make_RDM(activity_pattern_matrix, distance='pearson'):
     """Based on an activation pattern matrix, a dissimilarity matrix is returned"""
-    if distance=='Pearson':
+    if distance=='pearson':
         rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
     # elif distance=='Euclidian':
     #     rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
@@ -41,16 +41,16 @@ def flatten_RDM(rdm: np.ndarray) -> np.ndarray:
 # Spearman's correlation. If the parameter 'correlation' is set to 'Pearson',
 # Pearson's correlation will be performed.
 
-def correlate_RDMs(rdv1, rdv2, correlation='Pearson'):
-    if correlation == 'Spearman':
-        corr, p_value = spearmanr(rdv1, rdv2)
-    elif correlation == 'Pearson':
+def correlate_RDMs(rdv1, rdv2, correlation='pearson'):
+    if correlation == 'pearson':
         corr, p_value = pearsonr(rdv1, rdv2)
+    elif correlation == 'spearman':
+        corr, p_value = spearmanr(rdv1, rdv2)
     return corr, p_value
 
 #%%
 
-def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlation='Pearson'):
+def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlation='pearson'):
 
     rdm1 = make_RDM(activity_pattern_matrix_1)
     rdm2 = make_RDM(activity_pattern_matrix_2)
@@ -65,14 +65,14 @@ def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlati
 
 #%%
 
-def noise_ceiling(reference_rdms, correlation='pearsonr'):
+def noise_ceiling(reference_rdms, correlation='pearson'):
     n_subjects = reference_rdms.shape[2]
     
     reference_rdms = flatten_RDM(reference_rdms)
     
-    if correlation=='pearsonr':
+    if correlation=='pearson':
         reference_rdms = (reference_rdms - reference_rdms.mean(0)) / reference_rdms.std(0)
-    elif correlation=='spearmanr':
+    elif correlation=='spearman':
         reference_rdms = rankdata(reference_rdms, axis=0)
     #TODO: maybe implement Kendall's tau_a
     

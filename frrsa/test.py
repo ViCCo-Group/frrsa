@@ -19,7 +19,7 @@ outer_k = 2
 outer_reps = 1
 splitter = 'random'
 hyperparams = None
-score_type = 'pearsonr'
+score_type = 'pearson'
 
 predicted_RDM, predictions, unfitted_scores, crossval, betas, fitted_scores = frrsa(output,
                                                                                     inputs, 
