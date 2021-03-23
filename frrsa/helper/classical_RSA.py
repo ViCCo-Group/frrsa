@@ -13,21 +13,9 @@ from scipy.spatial.distance import squareform
 
 def make_RDM(activity_pattern_matrix):
     """Based on an activation pattern matrix, a dissimilarity matrix is returned"""
-    dissim_mat = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
-    return dissim_mat
-
-
-#%% The function 'classical_RSA' performs a classical RSA between two RDMs.
-# Hence, it requires to vectorised RDMs as inputs. By default, it performs
-# Spearman's correlation. If the parameter 'correlation' is set to 'Pearson',
-# Pearson's correlation will be performed.
-
-def correlate_RDMs(RDM1, RDM2, correlation='Spearman'):
-    if correlation == 'Spearman':
-        corr, p_value = spearmanr(RDM1, RDM2)
-    elif correlation == 'Pearson':
-        corr, p_value = pearsonr(RDM1, RDM2)
-    return corr, p_value
+    rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
+    return rdm
+#TODO: implement multiple matrices.
 
 
 #%% The funcion 'flatten_RDM' requires as its only argument a dissimilarity
@@ -36,28 +24,45 @@ def correlate_RDMs(RDM1, RDM2, correlation='Spearman'):
 # RDMs fed at once, requiring the shape (n,n,m), where m denotes different 
 # RDMs of shape (n,n).
 
-def flatten_RDM(rdms: np.ndarray) -> np.ndarray:
+def flatten_RDM(rdm: np.ndarray) -> np.ndarray:
     """Flattens the upper half of a dissimilarity matrix to a vector"""
-    if rdms.ndim==3:
+    if rdm.ndim==3:
         mapfunc = partial(squareform, checks=False)
-        V = np.array(list(map(mapfunc, np.moveaxis(rdms, -1, 0)))).T
-    elif rdms.ndim==2:
-        V = rdms[np.triu_indices(rdms.shape[0], k=1)].reshape(-1,1)
-    return V
+        rdv = np.array(list(map(mapfunc, np.moveaxis(rdm, -1, 0)))).T
+    elif rdm.ndim==2:
+        rdv = rdm[np.triu_indices(rdm.shape[0], k=1)].reshape(-1,1)
+    return rdv
 
+#%% The function 'classical_RSA' performs a classical RSA between two RDMs.
+# Hence, it requires to vectorised RDMs as inputs. By default, it performs
+# Spearman's correlation. If the parameter 'correlation' is set to 'Pearson',
+# Pearson's correlation will be performed.
+
+def correlate_RDMs(rdv1, rdv2, correlation='Pearson'):
+    if correlation == 'Spearman':
+        corr, p_value = spearmanr(rdv1, rdv2)
+    elif correlation == 'Pearson':
+        corr, p_value = pearsonr(rdv1, rdv2)
+    return corr, p_value
+#TODO: implement multiple matrices.
 
 #%%
 
-def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlation='Spearman'):
+def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlation='Pearson'):
 
-    discard, dissim_vec_1 = make_RDM(activity_pattern_matrix_1)
-    discard, dissim_vec_2 = make_RDM(activity_pattern_matrix_2)
+    rdm1 = make_RDM(activity_pattern_matrix_1)
+    rdm2 = make_RDM(activity_pattern_matrix_2)
 
-    corr, p_value = correlate_RDMs(dissim_vec_1, dissim_vec_2, correlation)
+    rdv1 = flatten_RDM(rdm1)
+    rdv2 = flatten_RDM(rdm2)
+
+    corr, p_value = correlate_RDMs(rdv1, rdv2, correlation)
 
     return corr, p_value
+#TODO: implement multiple matrices.
 
 #%%
+
 def noise_ceiling(reference_rdms, correlation='pearsonr'):
     n_subjects = reference_rdms.shape[2]
     
