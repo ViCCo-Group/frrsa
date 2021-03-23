@@ -11,12 +11,15 @@ from scipy.spatial.distance import squareform
 # the dissimilarity matrix.  For an explanation in which way 'dissim_vec' is
 # put together, see the function 'reduce_RDM'.
 
-def make_RDM(activity_pattern_matrix):
+def make_RDM(activity_pattern_matrix, distance='Pearson'):
     """Based on an activation pattern matrix, a dissimilarity matrix is returned"""
-    rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
+    if distance=='Pearson':
+        rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
+    # elif distance=='Euclidian':
+    #     rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
     return rdm
-#TODO: implement multiple matrices.
-
+#TODO: implement for multiple matrices.
+#TODO: implement other distance norms 
 
 #%% The funcion 'flatten_RDM' requires as its only argument a dissimilarity
 # matrix and reduces its unique upper half to a vector using np.triu_indices.
@@ -44,7 +47,6 @@ def correlate_RDMs(rdv1, rdv2, correlation='Pearson'):
     elif correlation == 'Pearson':
         corr, p_value = pearsonr(rdv1, rdv2)
     return corr, p_value
-#TODO: implement multiple matrices.
 
 #%%
 

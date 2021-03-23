@@ -4,7 +4,7 @@ from fitting.crossvalidation import frrsa
 # Specify a seed for reproducible results.
 rng = default_rng(seed=4)
 
-n_units = 50000 # How many measurement channels?
+n_units = 500 # How many measurement channels?
 n_objects = 100 # How many objects aka conditions?
 n_outputs = 2 # How many different outputs?
 

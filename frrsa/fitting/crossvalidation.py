@@ -67,7 +67,7 @@ def frrsa(output, \
         n_outputs = 1
 
     y_unfitted = flatten_RDM(output)
-    x_unfitted = flatten_RDM(make_RDM(inputs))
+    x_unfitted = flatten_RDM(make_RDM(inputs, distance='Pearson'))
  
     # Unfitted scores are non-crossvalidated scores between the complete 
     # y_unfitted and x_unfitted, i.e., a classical RSA.
@@ -368,8 +368,8 @@ def fit_and_score_baseline(inputs_z, y_train, y_test, train_idx, test_idx, score
         # vector with the same dimensions as y.  One beta is estimated using the
         # training data.  This beta is then applied to the test data.
         # Create flattened RDMs for train and test sets.
-    X_train = flatten_RDM(make_RDM(inputs_z[:, train_idx]))
-    X_test = flatten_RDM(make_RDM(inputs_z[:, test_idx]))
+    X_train = flatten_RDM(make_RDM(inputs_z[:, train_idx], distance='Pearson'))
+    X_test = flatten_RDM(make_RDM(inputs_z[:, test_idx], distance='Pearson'))
 
     # Fit model and get predictions and parameters.
     y_pred = baseline_model(X_train, X_test, y_train)
