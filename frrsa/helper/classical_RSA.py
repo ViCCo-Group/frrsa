@@ -94,6 +94,6 @@ def noise_ceiling(reference_rdms, correlation='pearson'):
     upper_bound /= n_subjects
     lower_bound /= n_subjects
     
-    return upper_bound, lower_bound
+    return np.array([upper_bound, lower_bound])
 
 
