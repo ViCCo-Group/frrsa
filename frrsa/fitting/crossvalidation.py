@@ -301,10 +301,8 @@ def collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter):
         average_preds = sum_of_preds_halves / sum_of_count_halves
     np.nan_to_num(average_preds, copy=False, nan=9999)
     predicted_RDM_re = np.zeros((predicted_RDM.shape))
-    for var in range(n_outputs):
-        predicted_RDM_re[idx_low[0], idx_low[1], var] = average_preds[:,var]
-        predicted_RDM_re[:,:,var] = predicted_RDM_re[:,:,var] + predicted_RDM_re[:,:,var].T
-        #TODO: get rid of the loop and make this implicitly parallel, maybe using np.transpose()
+    predicted_RDM_re[idx_low[0], idx_low[1], :] = average_preds
+    predicted_RDM_re = predicted_RDM_re + predicted_RDM_re.transpose((1,0,2))
     return predicted_RDM_re
 
 #%%
