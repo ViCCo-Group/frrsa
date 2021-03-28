@@ -51,7 +51,7 @@ Notes regarding language:
 ```
 
 ## Built With
-* [Anaconda for Python 3.7](https://www.anaconda.com/distribution/)
+* [Anaconda for Python](https://www.anaconda.com/distribution/)
 
 
 ## Authors
