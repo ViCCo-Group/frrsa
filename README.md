@@ -6,13 +6,13 @@ This projects provides algorithms which improve Representational Similarity Anal
 ## Getting Started
 
 ### Prerequisites
-FRRSA is written in Python 3. You can find an exhaustive package list in the [anaconda-env_tuned-rsa.yml](https://github.com/PhilippKaniuth/tuned_rsa/blob/main/anaconda-env-specs_tuned-rsa.yml). Use the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section): with the help of the environment file, you can then set up an Anaconda environment which should allow you to run the algorithms.
+FRRSA is written in Python 3. You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml). Use the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section): with the help of the environment file, you can then set up an Anaconda environment which should allow you to run the package.
 
 ### Installing
 
 
 ### How to use
-See ffrsa/test.py for a simple demonstration.
+See [ffrsa/test.py](https://github.com/PhilippKaniuth/frrsa/blob/master/frrsa/test.py) for a simple demonstration.
 
 Import the main function `from fitting.crossvalidation import frrsa` and run:
 ```
@@ -47,10 +47,11 @@ fitted_scores: a numpy array which holds, for every output, the correlation betw
 Notes regarding language:
 - "Channel" is a generic umbrella term and can mean, for example: a voxel, an MEG measurement channel, a unit of a deep neural network layer.
 - "Condition" can mean, for example: an image or other stimulus for which you have an activity pattern.
+- "n_output" is the amount of separate output-RDMs you want to predict using your inputs. Different outputs could for example be MEG RDMs from different time points or RDMs from different participants.
 ```
 
 ## Built With
-* [Anaconda for Python 3.7](https://www.anaconda.com/distribution/) - The development framework used.
+* [Anaconda for Python 3.7](https://www.anaconda.com/distribution/)
 
 
 ## Authors
@@ -65,5 +66,5 @@ This project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 -
 ## Acknowledgments
 * For all ridge regression fitting, [Fractional Ridge Regression](https://pubmed.ncbi.nlm.nih.gov/33252656/) by Rokem & Kay (2020) was used.
 * Thanks to Katja Seliger ([GitHub](https://github.com/kateiyas), [Personal Homepage](http://seeliger.space/)) and Oliver Contier ([GitHub](https://github.com/oliver-contier), [Personal Homepage](https://olivercontier.com)) for valuable discussions and hints.
-* Thanks to Hannes Hansen ([GitHub](https://github.com/hahahannes), [Personal Homepage](https://hannesh.de)) for code improvement.
+* Thanks to Hannes Hansen ([GitHub](https://github.com/hahahannes), [Personal Homepage](https://hannesh.de)) for considerable code improvement.
 
