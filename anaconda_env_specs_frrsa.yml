@@ -11,3 +11,5 @@ dependencies:
   - scipy=1.3.*
   - spyder
   - spyder-terminal
+  - psutil=5.8.*
+  - joblib=1.*
