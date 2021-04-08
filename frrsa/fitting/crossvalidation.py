@@ -312,8 +312,8 @@ def compute_hadamard_and_transpose(inputs_z, train_indices, test_indices):
     X_fitted_train, discard, discard = hadamard_products(inputs_z[:, train_indices])
     X_fitted_test, first_pair_idx, second_pair_idx = hadamard_products(inputs_z[:, test_indices])
 
-    X_fitted_train = 1 - X_fitted_train.transpose()
-    X_fitted_test = 1 - X_fitted_test.transpose()
+    X_fitted_train = X_fitted_train.transpose()
+    X_fitted_test = X_fitted_test.transpose()
 
     return X_fitted_train, X_fitted_test, first_pair_idx, second_pair_idx
 
