@@ -16,7 +16,7 @@ inputs = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 #%% Call the main funtion.
 outer_k = 2
-outer_reps = 1
+outer_reps = 2
 splitter = 'random'
 hyperparams = None
 score_type = 'pearson'
