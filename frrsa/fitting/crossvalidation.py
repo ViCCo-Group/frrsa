@@ -42,6 +42,8 @@ z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 #"inputs": channel*condition array.
 #"output": condition*condition array.
 
+#TODO: Add parameters to choose one of the predictor_distance funcs.
+
 def frrsa(output, \
           inputs, \
           outer_k=5, \
