@@ -9,6 +9,7 @@ import numpy as np
 from numba import prange, njit
 
 def hadamard_products(inputs_z):
+    '''Returns the element-wise products of all pairs of columns'''
     m, n = inputs_z.shape
     hadamard_prod = np.empty((m, n * (n - 1) // 2), dtype = inputs_z.dtype)
     ind1 = (np.kron(np.arange(0, n).reshape((n, 1)), np.ones((n, 1)))).squeeze().astype(int)
@@ -25,3 +26,22 @@ def numba_func_parallel_trans(inputs_z, hadamard_prod, m, n):
                 hadamard_prod[p, I] = inputs_z[p,i] * inputs_z[p, j]
                 I += 1
     return hadamard_prod
+
+def euclidian_per_cell(inputs_z, squared):
+    '''
+    Returns element-wise euclidian distance of all pairs of columns, either
+    squared or absolute.
+    '''
+    #TODO: needs to return first_pair_members, second_pair_members as well.
+    n_conditions = inputs_z.shape[1]
+    n_pairs = n_conditions*(n_conditions-1)//2
+    idx = np.concatenate(([0], np.arange(n_conditions-1,0,-1).cumsum()))
+    start, stop = idx[:-1], idx[1:]
+    X = np.empty((inputs_z.shape[0], n_pairs), dtype=inputs_z.dtype)
+    for j,i in enumerate(range(n_conditions-1)):
+        X[:, start[j]:stop[j]] = inputs_z[:,i,None] - inputs_z[:,i+1:]
+    if squared:
+        np.square(X, out=X)
+    else:
+        np.absolute(X, out=X)
+    return X
