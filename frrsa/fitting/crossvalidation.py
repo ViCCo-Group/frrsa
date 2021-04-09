@@ -20,14 +20,14 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
     print('within submodule')
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
-    from helper.hadamard import hadamard
+    from helper.predictor_distance import hadamard
     from fitting.scoring import scoring, scoring_unfitted
     from fitting.fitting import baseline_model, regularized_model, find_hyperparameters
 else:
     print('outside submodule')
     from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
-    from frrsa.frrsa.helper.hadamard import hadamard
+    from frrsa.frrsa.helper.predictor_distance import hadamard
     from frrsa.frrsa.fitting.scoring import scoring, scoring_unfitted
     from frrsa.frrsa.fitting.fitting import baseline_model, regularized_model, find_hyperparameters
 # import matplotlib as mpl
@@ -222,7 +222,11 @@ def start_outer_cross_validation(n_conditions,
                                  n_models):
     predicted_RDM, predicted_RDM_counter = preallocate_predictions(n_conditions, n_outputs)
     inputs_z = z_scale.fit_transform(inputs)
-
+    #TODO: possibly condition scaling on which "predictor_distance" is used; if
+    #hadamard z-transform. If euclidian, normalizing might be more suitable.
+    #Possibly adapt naming of function input in predictor_distance.euclidian
+    #accordingly.
+    
     n_predictors = inputs_z.shape[0] + 1 # +1 because intercept.
     hyperparams_enlarged = hyperparams.reshape(-1,1)
     hyperparams_enlarged = np.repeat(hyperparams_enlarged, repeats=n_outputs, axis=1)

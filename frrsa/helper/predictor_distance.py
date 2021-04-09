@@ -33,6 +33,7 @@ def euclidian(inputs_z, squared):
     squared or absolute.
     '''
     #TODO: needs to return first_pair_members, second_pair_members as well, until then not functional!
+    #TODO: in higher-order package "crossvalidation" in line 224, adapt scaling if needed. 
     n_conditions = inputs_z.shape[1]
     n_pairs = n_conditions*(n_conditions-1)//2
     idx = np.concatenate(([0], np.arange(n_conditions-1,0,-1).cumsum()))
