@@ -20,14 +20,14 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
     print('within submodule')
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
-    from helper.hadamard import hadamard_products
+    from helper.hadamard import hadamard
     from fitting.scoring import scoring, scoring_unfitted
     from fitting.fitting import baseline_model, regularized_model, find_hyperparameters
 else:
     print('outside submodule')
     from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
-    from frrsa.frrsa.helper.hadamard import hadamard_products
+    from frrsa.frrsa.helper.hadamard import hadamard
     from frrsa.frrsa.fitting.scoring import scoring, scoring_unfitted
     from frrsa.frrsa.fitting.fitting import baseline_model, regularized_model, find_hyperparameters
 # import matplotlib as mpl
@@ -309,8 +309,8 @@ def collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter):
 def compute_hadamard_and_transpose(inputs_z, train_indices, test_indices):
     '''Compute Hadamard products for train and test set.'''
     
-    X_fitted_train, discard, discard = hadamard_products(inputs_z[:, train_indices])
-    X_fitted_test, first_pair_idx, second_pair_idx = hadamard_products(inputs_z[:, test_indices])
+    X_fitted_train, discard, discard = hadamard(inputs_z[:, train_indices])
+    X_fitted_test, first_pair_idx, second_pair_idx = hadamard(inputs_z[:, test_indices])
 
     X_fitted_train = X_fitted_train.transpose()
     X_fitted_test = X_fitted_test.transpose()

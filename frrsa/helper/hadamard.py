@@ -8,7 +8,7 @@ Created on Fri Oct 16 16:38:33 2020
 import numpy as np
 from numba import prange, njit
 
-def hadamard_products(inputs_z):
+def hadamard(inputs_z):
     '''Returns the element-wise products of all pairs of columns'''
     m, n = inputs_z.shape
     hadamard_prod = np.empty((m, n * (n - 1) // 2), dtype = inputs_z.dtype)
@@ -27,12 +27,12 @@ def numba_func_parallel_trans(inputs_z, hadamard_prod, m, n):
                 I += 1
     return hadamard_prod
 
-def euclidian_per_cell(inputs_z, squared):
+def euclidian(inputs_z, squared):
     '''
     Returns element-wise euclidian distance of all pairs of columns, either
     squared or absolute.
     '''
-    #TODO: needs to return first_pair_members, second_pair_members as well.
+    #TODO: needs to return first_pair_members, second_pair_members as well, until then not functional!
     n_conditions = inputs_z.shape[1]
     n_pairs = n_conditions*(n_conditions-1)//2
     idx = np.concatenate(([0], np.arange(n_conditions-1,0,-1).cumsum()))
