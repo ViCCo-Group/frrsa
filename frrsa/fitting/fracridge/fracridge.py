@@ -148,7 +148,7 @@ def fracridge(X, X_test, y, fracs=None, tol=1e-10, jit=True, betas_wanted=False)
     isbad = selt < tol
     if np.any(isbad):
         warnings.warn("Some eigenvalues are being treated as 0")
-
+        print('Len of isbad is ' + str(len(isbad)))
     ols_coef[isbad, ...] = 0
 
     # Limits on the grid of candidate alphas used for interpolation:
