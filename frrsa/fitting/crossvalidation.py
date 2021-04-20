@@ -350,10 +350,10 @@ def collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter):
     sum_of_count_halves = predicted_RDM_counter[idx_up] + predicted_RDM_counter[idx_low]
     with np.errstate(divide='ignore', invalid='ignore'):
         average_preds = sum_of_preds_halves / sum_of_count_halves
-    np.nan_to_num(average_preds, copy=False, nan=9999)
     predicted_RDM_re = np.zeros((predicted_RDM.shape))
     predicted_RDM_re[idx_low[0], idx_low[1], :] = average_preds
     predicted_RDM_re = predicted_RDM_re + predicted_RDM_re.transpose((1,0,2))
+    predicted_RDM_re[(np.isnan(predicted_RDM_re))] = 9999
     return predicted_RDM_re
 
 #%%
