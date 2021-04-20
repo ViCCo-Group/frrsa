@@ -10,7 +10,9 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-
+import multiprocessing
+import psutil
+from joblib import Parallel, delayed
 
 #TODO: remove the following imports and conditionals before publicising repo.
 from pathlib import Path
@@ -52,7 +54,8 @@ def frrsa(output, \
           hyperparams=None, \
           score_type='pearson', \
           sanity=False, \
-          rng_state=None):
+          rng_state=None,
+          parallel=False):
     """ Implements a nested cross-validation, where in each CV, RDMs are fitted."""
 #%%    
     if hyperparams is None:
@@ -81,7 +84,7 @@ def frrsa(output, \
 #%%    
     n_outer_cvs = outer_k * outer_reps
     n_models = 2 # baseline and regularized model.
-    predictions, betas, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter = start_outer_cross_validation(n_conditions, splitter, rng_state, outer_k, outer_reps, n_outputs, inputs, output, score_type, hyperparams, n_outer_cvs, n_models)
+    predictions, betas, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter = start_outer_cross_validation(n_conditions, splitter, rng_state, outer_k, outer_reps, n_outputs, inputs, output, score_type, hyperparams, n_outer_cvs, n_models, parallel)
 
     # 'n' is exactly defined as above; needs to be reassigned because it needs
     # a different structure for 'scores' than for 'current_predictions'.
@@ -110,7 +113,7 @@ def frrsa(output, \
     fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
    
     return predicted_RDM_re, predictions, unfitted_scores, crossval, betas, fitted_scores
-
+ 
 def start_inner_cross_validation(splitter, rng_state, n_hyperparams, n_outputs, outer_train_indices, inputs_z, output, score_type, hyperparams):
     # Set up inner cross-validation.
     inner_k, inner_reps = 5, 5
@@ -148,14 +151,15 @@ def run_outer_cross_validation_batch(splitter,
                                      n_hyperparams, 
                                      n_outputs, 
                                      outer_train_indices, 
-                                     inputs_z, 
-                                     output, 
                                      score_type, 
                                      hyperparams, 
                                      hyperparams_enlarged, 
                                      outer_test_indices, 
-                                     outer_loop_count):
+                                     outer_loop_count,
+                                     inputs_z,
+                                     output):
     # Start inner cross validation
+    print('Start outer validation')
     inner_hyperparams_scores = start_inner_cross_validation(splitter, 
                                                             rng_state, 
                                                             n_hyperparams, 
@@ -208,7 +212,32 @@ def run_outer_cross_validation_batch(splitter,
     fold_pred = np.array([outer_loop_count+1] * len(y_test_reshaped))
     current_predictions = np.array([y_test_reshaped, y_regularized_reshaped, y_baseline_reshaped, n, fold_pred, first_pair_obj_tiled, second_pair_obj_tiled]).T
 
-    return current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, regularized_score, best_hyperparam, beta_unstandardized
+    print('Finished outer loop number: ' + str(outer_loop_count + 1))
+    return current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, regularized_score, best_hyperparam, beta_unstandardized, outer_loop_count
+
+
+def run_parallel(outer_run, splitter, rng_state, n_hyperparams, n_outputs, score_type, hyperparams, hyperparams_enlarged, inputs_z, output):
+    results = []
+    for batch in outer_run:
+        outer_train_indices = batch[0]
+        outer_test_indices = batch[1]
+        outer_loop_count = batch[2]
+        current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, \
+        regularized_score, best_hyperparam, beta_unstandardized, outer_loop_count = run_outer_cross_validation_batch(splitter, 
+                                                                                                                     rng_state, 
+                                                                                                                     n_hyperparams, 
+                                                                                                                     n_outputs, 
+                                                                                                                     outer_train_indices, 
+                                                                                                                     score_type, 
+                                                                                                                     hyperparams, 
+                                                                                                                     hyperparams_enlarged, 
+                                                                                                                     outer_test_indices, 
+                                                                                                                     outer_loop_count, 
+                                                                                                                     inputs_z, 
+                                                                                                                     output)
+        results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, regularized_score, 
+                        best_hyperparam, beta_unstandardized, outer_loop_count])
+    return results
 
 def start_outer_cross_validation(n_conditions, 
                                  splitter, 
@@ -221,7 +250,8 @@ def start_outer_cross_validation(n_conditions,
                                  score_type, 
                                  hyperparams,
                                  n_outer_cvs,
-                                 n_models):
+                                 n_models,
+                                 parallel):
     predicted_RDM, predicted_RDM_counter = preallocate_predictions(n_conditions, n_outputs)
     inputs_z = z_scale.fit_transform(inputs)
     #TODO: possibly condition scaling on which "predictor_distance" is used; if
@@ -249,25 +279,42 @@ def start_outer_cross_validation(n_conditions,
 
     # Set up outer cross-validation.
     outer_cv = data_splitter(splitter, outer_k, outer_reps, random_state=rng_state)
-    outer_loop_count = -1
     list_of_indices = list(range(n_conditions))
+    
+    results = []
 
-    for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
-        outer_loop_count += 1
-        current_predictions, y_regularized, \
-        first_pair_obj, second_pair_obj, baseline_score, \
-        regularized_score, best_hyperparam, beta_unstandardized = run_outer_cross_validation_batch(splitter, 
-                                                                                                    rng_state, 
-                                                                                                    n_hyperparams, 
-                                                                                                    n_outputs, 
-                                                                                                    outer_train_indices, 
-                                                                                                    inputs_z, 
-                                                                                                    output, 
-                                                                                                    score_type, 
-                                                                                                    hyperparams, 
-                                                                                                    hyperparams_enlarged, 
-                                                                                                    outer_test_indices, 
-                                                                                                    outer_loop_count)
+    if parallel:
+        outer_runs = []
+        outer_loop_count = -1
+
+        for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
+            outer_loop_count += 1
+            outer_runs.append([outer_train_indices, outer_test_indices, outer_loop_count])
+
+        # use physical cores
+        number_cores = psutil.cpu_count(logical=False)
+        jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run, splitter, rng_state, 
+                                                                                       n_hyperparams, n_outputs, score_type, 
+                                                                                       hyperparams, hyperparams_enlarged, 
+                                                                                       inputs_z, output) for outer_run in np.array_split(outer_runs, number_cores)) 
+        for job in jobs:
+            results += job
+    else:
+        outer_loop_count = -1
+        for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
+            outer_loop_count += 1
+            current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, \
+            regularized_score, best_hyperparam, beta_unstandardized, outer_loop_count = run_outer_cross_validation_batch(splitter, rng_state, n_hyperparams, 
+                                                                                                                         n_outputs, outer_train_indices, 
+                                                                                                                         score_type, hyperparams, hyperparams_enlarged, 
+                                                                                                                         outer_test_indices, outer_loop_count, inputs_z, output)
+            results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, 
+                            regularized_score, best_hyperparam, beta_unstandardized, outer_loop_count])
+
+    for result in results:
+        current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, \
+        regularized_score, best_hyperparam, beta_unstandardized, outer_loop_count = result
+
         predictions = np.concatenate((predictions, current_predictions), axis=0)
         
         start_idx = outer_loop_count * n_outputs * n_models
@@ -290,8 +337,6 @@ def start_outer_cross_validation(n_conditions,
 
         predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
         predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1
-        
-        print('Finished outer loop number: ' + str(outer_loop_count + 1))
         
     return predictions, betas, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter
 
