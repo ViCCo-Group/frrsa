@@ -77,7 +77,7 @@ def frrsa(output, \
     # Unfitted scores are non-crossvalidated scores between the complete 
     # y_unfitted and x_unfitted, i.e., a classical RSA.
     unfitted_scores = {}
-    key_list = ['pearsonr', 'spearmanr', 'RSS']
+    key_list = ['pearson', 'spearman', 'RSS']
     for key in key_list:
         unfitted_scores[key] = scoring_unfitted(y_unfitted, x_unfitted, key)
              
