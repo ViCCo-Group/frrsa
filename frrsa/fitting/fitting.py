@@ -41,7 +41,7 @@ def prepare_variables(X_train, X_test, y_train, y_test):
     # Scale X_test with _X_train_stds_ to get _nearly_ unstandardised predictions.
     X_test_z = (X_test - X_train_means.T) / X_train_stds
 
-    return X_train, X_train_means, X_train_stds, X_test, X_test_z, y_train, y_train_mean, n_outputs, y_predicted, beta_standardized
+    return X_train, X_train_means, X_train_stds, X_test_z, y_train, y_train_mean, n_outputs, y_predicted, beta_standardized
 
 
 def baseline_model(X_train, X_test, y_train):
@@ -58,7 +58,7 @@ def baseline_model(X_train, X_test, y_train):
 
 def regularized_model(X_train, X_test, y_train, y_test, fracs=None):    
 
-    X_train, X_train_means, X_train_stds, X_test, X_test_z, y_train, y_train_mean, n_outputs, y_predicted, beta_standardized = prepare_variables(X_train, X_test, y_train, y_test)
+    X_train, X_train_means, X_train_stds, X_test_z, y_train, y_train_mean, n_outputs, y_predicted, beta_standardized = prepare_variables(X_train, X_test, y_train, y_test)
     
     best_frac_uni = np.unique(fracs)      
     
@@ -83,11 +83,10 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs=None):
     return y_predicted, beta_unstandardized
 
 
-
 def find_hyperparameters(X_train, X_test, y_train, y_test, fracs=None):
     """"Fits an RDM to another RDM and returns scores, predictions, and parameters"""
 
-    X_train, X_train_means, X_train_stds, X_test, X_test_z, y_train, y_train_mean, n_outputs, y_predicted, beta_standardized = prepare_variables(X_train, X_test, y_train, y_test)
+    X_train, X_train_means, X_train_stds, X_test_z, y_train, y_train_mean, n_outputs, y_predicted, beta_standardized = prepare_variables(X_train, X_test, y_train, y_test)
 
     y_predicted, beta_unstandardized, evaluated_alphas = fracridge(X_train, X_test_z, y_train, fracs, tol=1e-10, jit=True, betas_wanted=False)
     
