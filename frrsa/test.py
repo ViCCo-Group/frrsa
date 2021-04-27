@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+@author: Philipp Kaniuth (kaniuth@cbs.mpg.de) 
+"""
+
 from numpy.random import default_rng
 from fitting.crossvalidation import frrsa
 
