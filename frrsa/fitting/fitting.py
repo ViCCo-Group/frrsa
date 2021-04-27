@@ -25,8 +25,8 @@ def count_outputs(y):
     else: 
         return 1
 
-def prepare_variables(X_train, X_test, y_train, y_test):
-    """"Fits an RDM to another RDM and returns predictions and parameters"""
+def prepare_variables(X_train, X_test, y_train):
+    """"Z-transforms X_train and X_test using X_train and centers y_train"""
     X_train_z = z_score.fit_transform(X_train)
     # Scale X_test with _X_train_stds_ to get _nearly_ unstandardised predictions.
     X_test_z = z_score.transform(X_test)
@@ -45,13 +45,13 @@ def baseline_model(X_train, X_test, y_train):
 
 def find_hyperparameters(X_train, X_test, y_train, y_test, fracs):
     """"Fits an RDM to another RDM and returns scores, predictions, and parameters"""
-    X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, X_test, y_train, y_test)
+    X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, X_test, y_train)
     y_predicted, *_ = fracridge(X_train, y_train, X_test_z, fracs)
     y_predicted += y_train_mean
     return y_predicted
 
 def regularized_model(X_train, X_test, y_train, y_test, fracs):    
-    X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, X_test, y_train, y_test)
+    X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, X_test, y_train)
     n_outputs = count_outputs(y_train)
     y_predicted = np.zeros((y_test.shape[0],n_outputs))
     best_frac_uni = np.unique(fracs)      
