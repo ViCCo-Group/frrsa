@@ -130,9 +130,9 @@ def frrsa(output, \
     flattend_pred_RDM_del = np.delete(flattend_pred_RDM, del_ind, axis=0)
     y_unfitted_del = np.delete(y_unfitted, del_ind, axis=0)
     fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
-   
     return predicted_RDM_re, predictions, unfitted_scores, crossval, fitted_scores
- 
+
+#%%
 def start_inner_cross_validation(splitter, rng_state, n_hyperparams, n_outputs, outer_train_indices, inputs_z, output, score_type, hyperparams):
     # Set up inner cross-validation.
     inner_k, inner_reps = 5, 5
@@ -154,6 +154,7 @@ def start_inner_cross_validation(splitter, rng_state, n_hyperparams, n_outputs, 
         inner_hyperparams_scores[:, :, inner_loop_count] = score_in
     return inner_hyperparams_scores
 
+#%%
 def evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams_enlarged):
     # Evalute which hyperparamter(s) is(are) the best for the current
     # outer fold.
@@ -165,6 +166,7 @@ def evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams_enlarged):
     best_hyperparam = hyperparams_enlarged[best_hyperparam_index][output_order]
     return best_hyperparam
 
+#%%
 def run_outer_cross_validation_batch(splitter, 
                                      rng_state, 
                                      n_hyperparams, 
@@ -234,7 +236,7 @@ def run_outer_cross_validation_batch(splitter,
     print('Finished outer loop number: ' + str(outer_loop_count + 1))
     return current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, regularized_score, best_hyperparam, outer_loop_count
 
-
+#%%
 def run_parallel(outer_run, splitter, rng_state, n_hyperparams, n_outputs, score_type, hyperparams, hyperparams_enlarged, inputs_z, output):
     results = []
     for batch in outer_run:
@@ -258,6 +260,7 @@ def run_parallel(outer_run, splitter, rng_state, n_hyperparams, n_outputs, score
                         best_hyperparam, outer_loop_count])
     return results
 
+#%%
 def start_outer_cross_validation(n_conditions, 
                                  splitter, 
                                  rng_state, 
@@ -346,10 +349,8 @@ def start_outer_cross_validation(n_conditions,
         hyperparameter[start_idx:start_idx+n_outputs] = best_hyperparam
 
         predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
-        predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1
-        
+        predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1 
     return predictions, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter
-
 
 #%%
 def collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter):
@@ -369,13 +370,11 @@ def collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter):
 #%%
 def compute_hadamard_and_transpose(inputs_z, train_indices, test_indices):
     '''Compute Hadamard products for train and test set.'''
-    
-    X_fitted_train, discard, discard = hadamard(inputs_z[:, train_indices])
+    X_fitted_train, *_ = hadamard(inputs_z[:, train_indices])
     X_fitted_test, first_pair_idx, second_pair_idx = hadamard(inputs_z[:, test_indices])
 
     X_fitted_train = X_fitted_train.transpose()
     X_fitted_test = X_fitted_test.transpose()
-
     return X_fitted_train, X_fitted_test, first_pair_idx, second_pair_idx
 
 #%%
@@ -385,30 +384,22 @@ def vectorise_rdm_to_train_and_test(train_indices, test_indices, output):
     y_train = flatten_RDM(output[ixgrid])
     ixgrid = np.ix_(test_indices, test_indices)
     y_test = flatten_RDM(output[ixgrid])
-    
     return y_train, y_test
 
 #%%
 def fit_and_score_in(inputs_z, output, train_idx, test_idx, score_type, hyperparams):
     """ Fit model, find hyperparamter value and score in the inner cross validation."""
-    
-    X_train, X_test, discard, discard = compute_hadamard_and_transpose(inputs_z, train_idx, test_idx)
-
+    X_train, X_test, *_ = compute_hadamard_and_transpose(inputs_z, train_idx, test_idx)
     y_train, y_test = vectorise_rdm_to_train_and_test(train_idx, test_idx, output)
-                
     # Fit model for each candidate hyperparamter and get its score.
     y_pred = find_hyperparameters(X_train, X_test, y_train, y_test, hyperparams)
-    
     score = scoring(y_test, y_pred, score_type=score_type)
-
     return score
 
 #%%
 def fit_and_score_out(inputs_z, y_train, y_test, train_idx, test_idx, score_type, hyperparams):
     """ Fit model and get its score in outer cross validation."""
-
     X_train, X_test, first_pair_idx, second_pair_idx = compute_hadamard_and_transpose(inputs_z, train_idx, test_idx)
-    
     # Fit model and get predictions and parameters.
     y_pred = regularized_model(X_train, 
                                X_test, 
@@ -417,7 +408,6 @@ def fit_and_score_out(inputs_z, y_train, y_test, train_idx, test_idx, score_type
                                hyperparams)
     # Based on predictions and test data, evaluate fit.
     score = scoring(y_test, y_pred, score_type=score_type)
-    
     return score, first_pair_idx, second_pair_idx, y_pred
 
 #%%
@@ -429,28 +419,21 @@ def fit_and_score_baseline(inputs_z, y_train, y_test, train_idx, test_idx, score
         # Create flattened RDMs for train and test sets.
     X_train = flatten_RDM(make_RDM(inputs_z[:, train_idx], distance='pearson'))
     X_test = flatten_RDM(make_RDM(inputs_z[:, test_idx], distance='pearson'))
-
     # Fit model and get predictions and parameters.
     y_pred = baseline_model(X_train, X_test, y_train)
-    
     # Based on predictions and test data, evaluate fit.
     score = scoring(y_test, y_pred, score_type=score_type)
-    
     return score, y_pred
-
 
 #%%
 def preallocate_predictions(n_conditions, n_outputs):
     # Pre-allocate an empty array which will be used later to store all
     # similarities as predicted by the best fitted outer model of each outer fold.
     predicted_RDM = np.zeros((n_conditions, n_conditions, n_outputs))
-
     # Pre-allocate an empty array which will be used later to count how many
     # similarities as predicted by the best fitted outer model of each outer fold
     # are collected for each unique condition-pair.
     predicted_RDM_counter = np.zeros((n_conditions, n_conditions, n_outputs))
-    
     return predicted_RDM, predicted_RDM_counter
-
 
 #%% End of script.

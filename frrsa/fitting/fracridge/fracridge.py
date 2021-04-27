@@ -29,9 +29,7 @@ BIG_BIAS = 10e3
 SMALL_BIAS = 10e-3
 BIAS_STEP = 0.2
 
-
 __all__ = ["fracridge"]
-
 
 def _do_svd(X, y, jit=True):
     """
@@ -39,7 +37,6 @@ def _do_svd(X, y, jit=True):
     """
     if len(y.shape) == 1:
         y = y[:, np.newaxis]
-
     # Per default, we'll try to use the jit-compiled SVD, which should be
     # more performant:
     use_scipy = False
@@ -73,7 +70,6 @@ def _do_svd(X, y, jit=True):
         ynew = uu.T @ y
 
     ols_coef = (ynew.T / selt).T
-
     return selt, v_t, ols_coef
 
 
@@ -213,7 +209,4 @@ def fracridge(X, y, X_test=None, fracs=None, tol=1e-10, jit=True, betas_wanted=F
           (pp, ff, bb)).squeeze()
     else:
         coef = None
-    
     return pred, coef, alphas
-
-
