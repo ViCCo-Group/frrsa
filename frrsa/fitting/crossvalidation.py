@@ -31,7 +31,7 @@ else:
     from frrsa.frrsa.helper.data_splitter import data_splitter
     from frrsa.frrsa.helper.predictor_distance import hadamard
     from frrsa.frrsa.fitting.scoring import scoring, scoring_unfitted
-    from frrsa.frrsa.fitting.fitting import baseline_model, regularized_model, find_hyperparameters
+    from frrsa.frrsa.fitting.fitting import baseline_model, regularized_model, find_hyperparameters, final_model
 # import matplotlib as mpl
 # Suppress printing figures to a display.
 # mpl.use('Agg')
@@ -57,7 +57,7 @@ def frrsa(output, \
           rng_state=None,
           parallel=False):
     """ Implements a nested cross-validation, where in each CV, RDMs are fitted."""
-#%%    
+
     if hyperparams is None:
         hyperparams = np.linspace(.05, 1, 20) # following recommendation by Rokem & Kay (2020).
 
@@ -81,10 +81,24 @@ def frrsa(output, \
     for key in key_list:
         unfitted_scores[key] = scoring_unfitted(y_unfitted, x_unfitted, key)
              
-#%%    
     n_outer_cvs = outer_k * outer_reps
     n_models = 2 # baseline and regularized model.
-    predictions, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter = start_outer_cross_validation(n_conditions, splitter, rng_state, outer_k, outer_reps, n_outputs, inputs, output, score_type, hyperparams, n_outer_cvs, n_models, parallel)
+    
+    inputs_z = z_scale.fit_transform(inputs)
+    
+    predictions, score, model_type, fold, hyperparameter, predicted_RDM, predicted_RDM_counter = start_outer_cross_validation(n_conditions, 
+                                                                                                                              splitter, 
+                                                                                                                              rng_state, 
+                                                                                                                              outer_k, 
+                                                                                                                              outer_reps,
+                                                                                                                              n_outputs, 
+                                                                                                                              inputs_z, 
+                                                                                                                              output, 
+                                                                                                                              score_type, 
+                                                                                                                              hyperparams, 
+                                                                                                                              n_outer_cvs, 
+                                                                                                                              n_models, 
+                                                                                                                              parallel)
 
     # 'n' is exactly defined as above; needs to be reassigned because it needs
     # a different structure for 'scores' than for 'current_predictions'.
@@ -99,17 +113,22 @@ def frrsa(output, \
     # betas = pd.DataFrame(data=betas, \
     #                      columns=['betas_n_{0}'.format(i+1) for i in range(n_outputs)] + ['fold'])
     
+    
+
+    # X, discard, discard = hadamard(inputs_z)
+
+    # X = X.transpose()
+    
+    # betas = final_model(X, frac=hyperparam, betas_wanted=True, pred_wanted=False)
+
+    
     # Collapse the RDMs along the diagonal, sum & divide, put pack in array.
     predicted_RDM_re = collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter)
-
     # Compute correlation between fitted RDMs and output RDM.
     flattend_pred_RDM = flatten_RDM(predicted_RDM_re)
-    
     del_ind = np.where(flattend_pred_RDM[:,0]==9999)[0]
-    
     flattend_pred_RDM_del = np.delete(flattend_pred_RDM, del_ind, axis=0)
     y_unfitted_del = np.delete(y_unfitted, del_ind, axis=0)
-
     fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
    
     return predicted_RDM_re, predictions, unfitted_scores, crossval, fitted_scores
@@ -245,7 +264,7 @@ def start_outer_cross_validation(n_conditions,
                                  outer_k, 
                                  outer_reps, 
                                  n_outputs, 
-                                 inputs, 
+                                 inputs_z, 
                                  output, 
                                  score_type, 
                                  hyperparams,
@@ -253,7 +272,6 @@ def start_outer_cross_validation(n_conditions,
                                  n_models,
                                  parallel):
     predicted_RDM, predicted_RDM_counter = preallocate_predictions(n_conditions, n_outputs)
-    inputs_z = z_scale.fit_transform(inputs)
     #TODO: possibly condition scaling on which "predictor_distance" is used; if
     #hadamard z-transform. If euclidian, normalizing might be more suitable.
     #Possibly adapt naming of function input in predictor_distance.euclidian
@@ -419,6 +437,7 @@ def fit_and_score_baseline(inputs_z, y_train, y_test, train_idx, test_idx, score
     score = scoring(y_test, y_pred, score_type=score_type)
     
     return score, y_pred
+
 
 #%%
 def preallocate_predictions(n_conditions, n_outputs):
