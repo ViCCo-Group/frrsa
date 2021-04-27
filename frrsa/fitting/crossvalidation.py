@@ -24,7 +24,7 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
     from helper.data_splitter import data_splitter
     from helper.predictor_distance import hadamard
     from fitting.scoring import scoring, scoring_unfitted
-    from fitting.fitting import baseline_model, regularized_model, find_hyperparameters
+    from fitting.fitting import baseline_model, regularized_model, find_hyperparameters, final_model
 else:
     print('outside submodule')
     from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
@@ -46,14 +46,15 @@ z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 
 #TODO: Add parameters to choose one of the predictor_distance funcs.
 
-def frrsa(output, \
-          inputs, \
-          outer_k=5, \
-          outer_reps=10, \
-          splitter='random', \
-          hyperparams=None, \
-          score_type='pearson', \
-          sanity=False, \
+def frrsa(output,
+          inputs,
+          outer_k=5,
+          outer_reps=10,
+          splitter='random',
+          hyperparams=None,
+          score_type='pearson',
+          betas_wanted=False,
+          sanity=False,
           rng_state=None,
           parallel=False):
     """ Implements a nested cross-validation, where in each CV, RDMs are fitted."""
@@ -74,8 +75,7 @@ def frrsa(output, \
     y_unfitted = flatten_RDM(output)
     x_unfitted = flatten_RDM(make_RDM(inputs, distance='pearson'))
  
-    # Unfitted scores are non-crossvalidated scores between the complete 
-    # y_unfitted and x_unfitted, i.e., a classical RSA.
+    # Unfitted scores is classical RSA.
     unfitted_scores = {}
     key_list = ['pearson', 'spearman', 'RSS']
     for key in key_list:
@@ -110,19 +110,17 @@ def frrsa(output, \
     predictions = pd.DataFrame(data=np.delete(predictions, 0, 0), \
                                columns=['y_test', 'y_regularized', 'y_baseline', 'n', 'fold', 'first_obj', 'second_obj'])
     
-    # betas = pd.DataFrame(data=betas, \
-    #                      columns=['betas_n_{0}'.format(i+1) for i in range(n_outputs)] + ['fold'])
+    if betas_wanted:
+        X, *_ = hadamard(inputs_z)
+        X = X.transpose()    
+        fracs = crossval[crossval['model_type']!='base'].groupby(['n'])['hyperparameter'].mean()
+        betas = final_model(X, y_unfitted, fracs, betas_wanted=False, pred_wanted=True)
+        betas = pd.DataFrame(data=betas, \
+                              columns=['betas_n_{0}'.format(i+1) for i in range(n_outputs)])
+    else:
+        betas = None
     
-    
-
-    # X, discard, discard = hadamard(inputs_z)
-
-    # X = X.transpose()
-    
-    # betas = final_model(X, frac=hyperparam, betas_wanted=True, pred_wanted=False)
-
-    
-    # Collapse the RDMs along the diagonal, sum & divide, put pack in array.
+    # Collapse the RDMs along the diagonal, sum & divide, and put pack in array.
     predicted_RDM_re = collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter)
     # Compute correlation between fitted RDMs and output RDM.
     flattend_pred_RDM = flatten_RDM(predicted_RDM_re)
@@ -130,7 +128,7 @@ def frrsa(output, \
     flattend_pred_RDM_del = np.delete(flattend_pred_RDM, del_ind, axis=0)
     y_unfitted_del = np.delete(y_unfitted, del_ind, axis=0)
     fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
-    return predicted_RDM_re, predictions, unfitted_scores, crossval, fitted_scores
+    return predicted_RDM_re, predictions, unfitted_scores, crossval, fitted_scores, betas
 
 #%%
 def start_inner_cross_validation(splitter, rng_state, n_hyperparams, n_outputs, outer_train_indices, inputs_z, output, score_type, hyperparams):

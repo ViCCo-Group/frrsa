@@ -55,27 +55,34 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs):
     X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, X_test, y_train)
     n_outputs = count_outputs(y_train)
     y_predicted = np.zeros((y_test.shape[0],n_outputs))
-    best_frac_uni = np.unique(fracs)      
-    for frac in best_frac_uni:
-        frac_indx = np.where(fracs==frac)[0]
-        n_current_outputs = len(frac_indx)
-        y_train_current = y_train[:, frac_indx]
+    unique_fracs = np.unique(fracs)
+    for frac in unique_fracs:
+        idx = np.where(fracs==frac)[0]
+        n_current_outputs = len(idx)
+        y_train_current = y_train[:, idx]
         y_pred_current, *_ = fracridge(X_train, y_train_current, X_test_z, frac)
-        y_predicted[:, frac_indx] = y_pred_current.reshape(-1,n_current_outputs)
+        y_predicted[:, idx] = y_pred_current.reshape(-1,n_current_outputs)
     # To have _fully_ undstandardised predictions, one needs to add y_train to y_predicted.
     y_predicted += y_train_mean
     return y_predicted
 
-def final_model(X, y, fracs, betas_wanted=False, pred_wanted=True):    
+def final_model(X, y, fracs, betas_wanted=False, pred_wanted=True):
     """Performs fracridge on the whole dataset for possibly several outputs using each output's best hyperparameter"""
     X = z_score.fit_transform(X)
     X_means = z_score.mean_.reshape(-1,1)
     X_stds = z_score.scale_
     y_mean = np.mean(y, axis=0)
     y = y - y_mean
-    
-    _, beta_standardized, _ = fracridge(X, y, X_test=None, fracs=fracs, tol=1e-10, jit=True, betas_wanted=True, pred_wanted=False)
-    
+    n_outputs = count_outputs(y)
+    beta_standardized = np.zeros((X.shape[1],n_outputs))
+    fracs = fracs.to_numpy()
+    unique_fracs = np.unique(fracs)
+    for frac in unique_fracs:
+        idx = np.where(fracs==frac)[0]
+        n_current_outputs = len(idx)
+        y_current = y[:, idx]
+        _, beta_standardized_current, _ = fracridge(X, y_current, fracs=frac, betas_wanted=True, pred_wanted=False)
+        beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_outputs)
     beta_unstandardized = beta_standardized.T / X_stds 
     n_outputs = count_outputs(y)
     intercept = y_mean.reshape(n_outputs,1) - (beta_unstandardized @ X_means)
