@@ -23,16 +23,16 @@ rng_state = None
 sanity = False
 parallel = True
 
-predicted_RDM, predictions, unfitted_scores, crossval, betas, fitted_scores = frrsa(output,
-                                                                                        inputs, 
-                                                                                        outer_k, 
-                                                                                        outer_reps, 
-                                                                                        splitter, 
-                                                                                        hyperparams, 
-                                                                                        score_type, 
-                                                                                        sanity=sanity, 
-                                                                                        rng_state=rng_state,
-                                                                                        parallel=parallel)
+predicted_RDM, predictions, unfitted_scores, crossval, fitted_scores = frrsa(output,
+                                                                            inputs, 
+                                                                            outer_k, 
+                                                                            outer_reps, 
+                                                                            splitter, 
+                                                                            hyperparams, 
+                                                                            score_type, 
+                                                                            sanity=sanity, 
+                                                                            rng_state=rng_state,
+                                                                            parallel=parallel)
 
 
 #%% End of script
