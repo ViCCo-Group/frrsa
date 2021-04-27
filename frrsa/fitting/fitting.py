@@ -64,7 +64,7 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs=None):
         frac_indx = np.where(fracs==frac)[0]
         n_current_outputs = len(frac_indx)
         y_train_current = y_train[:, frac_indx]
-        y_pred_current, beta_stand_current, evaluated_alphas = fracridge(X_train, X_test_z, y_train_current, frac, betas_wanted=True)
+        y_pred_current, beta_stand_current, evaluated_alphas = fracridge(X_train, X_test_z, y_train_current, frac, betas_wanted=False)
         y_predicted[:, frac_indx] = y_pred_current.reshape(-1,n_current_outputs)
         
     # To have _fully_ undstandardised predictions, one needs to add y_train to y_predicted.
