@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Oct 16 16:47:07 2020
-
-@author: kaniuth
+@author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
 """
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -84,8 +82,3 @@ def final_model(X, y, fracs, betas_wanted=False, pred_wanted=True):
     beta_unstandardized = beta_unstandardized.T
     beta_unstandardized = np.concatenate((intercept.T, beta_unstandardized), axis=0)
     return beta_unstandardized
-
-
-
-
-
