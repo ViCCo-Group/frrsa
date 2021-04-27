@@ -19,20 +19,21 @@ outer_reps = 3
 splitter = 'random'
 hyperparams = None
 score_type = 'pearson'
-rng_state = None
+betas_wanted = True
+rng_state = 1
 sanity = False
 parallel = True
 
-predicted_RDM, predictions, unfitted_scores, crossval, fitted_scores = frrsa(output,
-                                                                            inputs, 
-                                                                            outer_k, 
-                                                                            outer_reps, 
-                                                                            splitter, 
-                                                                            hyperparams, 
-                                                                            score_type, 
-                                                                            sanity=sanity, 
-                                                                            rng_state=rng_state,
-                                                                            parallel=parallel)
-
+predicted_RDM_re, predictions, unfitted_scores, crossval, fitted_scores, betas = frrsa(output,
+                                                                                       inputs, 
+                                                                                       outer_k, 
+                                                                                       outer_reps, 
+                                                                                       splitter, 
+                                                                                       hyperparams, 
+                                                                                       score_type, 
+                                                                                       betas_wanted,
+                                                                                       sanity, 
+                                                                                       rng_state,
+                                                                                       parallel)
 
 #%% End of script
