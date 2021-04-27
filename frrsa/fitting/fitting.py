@@ -54,7 +54,7 @@ def baseline_model(X_train, X_test, y_train):
     return y_predicted
 
 
-def regularized_model(X_train, X_test, y_train, y_test, fracs=None):    
+def regularized_model(X_train, X_test, y_train, y_test, fracs):    
 
     X_train, X_train_means, X_train_stds, X_test_z, y_train, y_train_mean, n_outputs, y_predicted = prepare_variables(X_train, X_test, y_train, y_test)
     
@@ -64,7 +64,7 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs=None):
         frac_indx = np.where(fracs==frac)[0]
         n_current_outputs = len(frac_indx)
         y_train_current = y_train[:, frac_indx]
-        y_pred_current, beta_stand_current, evaluated_alphas = fracridge(X_train, X_test_z, y_train_current, frac, betas_wanted=False)
+        y_pred_current, beta_stand_current, evaluated_alphas = fracridge(X_train, y_train_current, X_test_z, frac)
         y_predicted[:, frac_indx] = y_pred_current.reshape(-1,n_current_outputs)
         
     # To have _fully_ undstandardised predictions, one needs to add y_train to y_predicted.
@@ -73,12 +73,12 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs=None):
     return y_predicted
 
 
-def find_hyperparameters(X_train, X_test, y_train, y_test, fracs=None):
+def find_hyperparameters(X_train, X_test, y_train, y_test, fracs):
     """"Fits an RDM to another RDM and returns scores, predictions, and parameters"""
 
     X_train, X_train_means, X_train_stds, X_test_z, y_train, y_train_mean, n_outputs, y_predicted = prepare_variables(X_train, X_test, y_train, y_test)
 
-    y_predicted, beta_unstandardized, evaluated_alphas = fracridge(X_train, X_test_z, y_train, fracs, tol=1e-10, jit=True, betas_wanted=False)
+    y_predicted, beta_unstandardized, evaluated_alphas = fracridge(X_train, y_train, X_test_z, fracs)
     
     y_predicted += y_train_mean
     

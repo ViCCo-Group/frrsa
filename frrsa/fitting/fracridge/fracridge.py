@@ -8,13 +8,16 @@
 # https://doi.org/10.1093/gigascience/giaa133.
 #     
 # The only changes I implemented are the following:
-#     - the function "fracridge" now contains the argument "X_test" and outputs
-#         predictions directly.
-#     - the function "fracridge" now contains the argument "betas_wanted" to
+#     - the function "fracridge" contains the argument "X_test" which
+#         defaults to None.
+#     - the function "fracridge" returns predictions directly.
+#     - the function "fracridge" contains the argument "pred_wanted" to
+#         specify whether predictions shall be output at all.
+#     - the function "fracridge" contains the argument "betas_wanted" to
 #         specify whether coefs shall be output at all.
 #     - other functions defined in the original module were deleted, since they
 #         are not needed in the framework of my project FR-RSA.
-# Last updated: 1st of February 2021
+# Last updated: 27st of April 2021
 # =============================================================================
 
 import numpy as np
@@ -74,7 +77,7 @@ def _do_svd(X, y, jit=True):
     return selt, v_t, ols_coef
 
 
-def fracridge(X, X_test, y, fracs=None, tol=1e-10, jit=True, betas_wanted=False):
+def fracridge(X, y, X_test=None, fracs=None, tol=1e-10, jit=True, betas_wanted=False, pred_wanted=True):
     """
     Approximates alpha parameters to match desired fractions of OLS length.
     Parameters
@@ -198,9 +201,12 @@ def fracridge(X, X_test, y, fracs=None, tol=1e-10, jit=True, betas_wanted=False)
 
     # After iterating over all targets, we unrotate using the unitary v
     # matrix and reshape to conform to desired output:
-        
-    pred = np.reshape(X_test @ v_t.T @ coef.reshape((first_dim, ff * bb)),
-                  (X_test.shape[0], ff, bb)).squeeze()
+    
+    if pred_wanted:
+        pred = np.reshape(X_test @ v_t.T @ coef.reshape((first_dim, ff * bb)),
+                      (X_test.shape[0], ff, bb)).squeeze()
+    else:
+        pred = None
     
     if betas_wanted:
         coef = np.reshape(v_t.T @ coef.reshape((first_dim, ff * bb)),
