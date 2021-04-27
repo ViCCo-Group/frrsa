@@ -121,6 +121,7 @@ def fracridge(X, y, X_test=None, fracs=None, tol=1e-10, jit=True, betas_wanted=F
     >>> print(np.linalg.norm(coef2 - coef3))  # doctest: +NUMBER
     0.0
     """
+    #TODO: get rid of the next conditional since default fracs are assigned at beginning of frrsa function.
     if fracs is None:
         fracs = np.arange(.1, 1.1, .1)
 

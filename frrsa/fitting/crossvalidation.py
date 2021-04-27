@@ -45,7 +45,6 @@ z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 #"output": condition*condition array.
 
 #TODO: Add parameters to choose one of the predictor_distance funcs.
-
 def frrsa(output,
           inputs,
           outer_k=5,
@@ -57,8 +56,8 @@ def frrsa(output,
           sanity=False,
           rng_state=None,
           parallel=False):
-    """ Implements a nested cross-validation, where in each CV, RDMs are fitted."""
-
+    """ Implements repated, nested cross-validated FRRRSA."""
+    
     if hyperparams is None:
         hyperparams = np.linspace(.05, 1, 20) # following recommendation by Rokem & Kay (2020).
 
@@ -77,6 +76,7 @@ def frrsa(output,
  
     # Unfitted scores is classical RSA.
     unfitted_scores = {}
+    #TODO: deprecate those unfitted scores that are not requested in frrsa(score_type)
     key_list = ['pearson', 'spearman', 'RSS']
     for key in key_list:
         unfitted_scores[key] = scoring_unfitted(y_unfitted, x_unfitted, key)
@@ -409,6 +409,7 @@ def fit_and_score_out(inputs_z, y_train, y_test, train_idx, test_idx, score_type
     return score, first_pair_idx, second_pair_idx, y_pred
 
 #%%
+#TODO: deprecate this function altogether, also in lower-level modules.
 def fit_and_score_baseline(inputs_z, y_train, y_test, train_idx, test_idx, score_type):
     """ Fit model and get its score in outer cross validation."""
         # Fit and score baseline model is a simple linear regression model.  Here, X is a

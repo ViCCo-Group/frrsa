@@ -34,6 +34,7 @@ def prepare_variables(X_train, X_test, y_train):
     return X_train_z, X_test_z, y_train, y_train_mean
 
 def baseline_model(x_train, x_test, y_train):
+    #TODO: deprecate.
     """Cross-validates simple linear regression for two dissimilarity vectors"""
     model = LinearRegression(fit_intercept=True,
                              normalize=False,
