@@ -35,14 +35,14 @@ def prepare_variables(X_train, X_test, y_train):
     y_train = y_train - y_train_mean
     return X_train_z, X_test_z, y_train, y_train_mean
 
-def baseline_model(X_train, X_test, y_train):
+def baseline_model(x_train, x_test, y_train):
     """Cross-validates simple linear regression for two dissimilarity vectors"""
     model = LinearRegression(fit_intercept=True,
                              normalize=False,
                              copy_X=False,
                              n_jobs=None)
-    model.fit(X_train, y_train)
-    y_predicted = model.predict(X_test)
+    model.fit(x_train, y_train)
+    y_predicted = model.predict(x_test)
     return y_predicted
 
 def find_hyperparameters(X_train, X_test, y_train, y_test, fracs):

@@ -417,14 +417,14 @@ def fit_and_score_baseline(inputs_z, y_train, y_test, train_idx, test_idx, score
         # vector with the same dimensions as y.  One beta is estimated using the
         # training data.  This beta is then applied to the test data.
         # Create flattened RDMs for train and test sets.
-    X_train = flatten_RDM(make_RDM(inputs_z[:, train_idx], distance='pearson'))
-    X_test = flatten_RDM(make_RDM(inputs_z[:, test_idx], distance='pearson'))
+    x_train = flatten_RDM(make_RDM(inputs_z[:, train_idx], distance='pearson'))
+    x_test = flatten_RDM(make_RDM(inputs_z[:, test_idx], distance='pearson'))
     # Fit model and get predictions and parameters.
-    y_pred = baseline_model(X_train, X_test, y_train)
+    y_pred = baseline_model(x_train, x_test, y_train)
     # Based on predictions and test data, evaluate fit.
     score = scoring(y_test, y_pred, score_type=score_type)
-    return score, y_pred
-
+    return score, y_pred    
+    
 #%%
 def preallocate_predictions(n_conditions, n_outputs):
     # Pre-allocate an empty array which will be used later to store all
