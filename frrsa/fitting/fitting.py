@@ -67,7 +67,7 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs):
     y_predicted += y_train_mean
     return y_predicted
 
-def final_model(X, y, fracs, betas_wanted=False, pred_wanted=True):
+def final_model(X, y, fracs):
     """Performs fracridge on the whole dataset for possibly several outputs using each output's best hyperparameter"""
     X = z_score.fit_transform(X)
     X_means = z_score.mean_.reshape(-1,1)
@@ -85,7 +85,6 @@ def final_model(X, y, fracs, betas_wanted=False, pred_wanted=True):
         _, beta_standardized_current, _ = fracridge(X, y_current, fracs=frac, betas_wanted=True, pred_wanted=False)
         beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_outputs)
     beta_unstandardized = beta_standardized.T / X_stds 
-    n_outputs = count_outputs(y)
     intercept = y_mean.reshape(n_outputs,1) - (beta_unstandardized @ X_means)
     beta_unstandardized = beta_unstandardized.T
     beta_unstandardized = np.concatenate((intercept.T, beta_unstandardized), axis=0)

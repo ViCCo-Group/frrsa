@@ -114,7 +114,7 @@ def frrsa(output,
         X, *_ = hadamard(inputs_z)
         X = X.transpose()    
         fracs = crossval[crossval['model_type']!='base'].groupby(['n'])['hyperparameter'].mean()
-        betas = final_model(X, y_unfitted, fracs, betas_wanted=False, pred_wanted=True)
+        betas = final_model(X, y_unfitted, fracs)
         betas = pd.DataFrame(data=betas, \
                               columns=['betas_n_{0}'.format(i+1) for i in range(n_outputs)])
     else:
