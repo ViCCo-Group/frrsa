@@ -153,15 +153,12 @@ def start_inner_cross_validation(splitter, rng_state, n_hyperparams, n_outputs, 
     return inner_hyperparams_scores
 
 #%%
-def evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams_enlarged):
+def evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams):
     # Evalute which hyperparamter(s) is(are) the best for the current
     # outer fold.
     inner_hyperparams_scores_avgs = np.mean(inner_hyperparams_scores, axis=2)
-    best_hyperparam_index = np.where(inner_hyperparams_scores_avgs == \
-                                     np.amax(inner_hyperparams_scores_avgs, \
-                                     axis=0))
-    output_order = best_hyperparam_index[1]
-    best_hyperparam = hyperparams_enlarged[best_hyperparam_index][output_order]
+    best_hyperparam_index = inner_hyperparams_scores_avgs.argmax(axis=0)
+    best_hyperparam = hyperparams[best_hyperparam_index]
     return best_hyperparam
 
 #%%
@@ -172,7 +169,6 @@ def run_outer_cross_validation_batch(splitter,
                                      outer_train_indices, 
                                      score_type, 
                                      hyperparams, 
-                                     hyperparams_enlarged, 
                                      outer_test_indices, 
                                      outer_loop_count,
                                      inputs_z,
@@ -191,7 +187,7 @@ def run_outer_cross_validation_batch(splitter,
     
     # Note: "best_hyperparam" gives the best fraction for each output, 
     # sorted in the same order as the outputs were supplied in "outputs".
-    best_hyperparam = evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams_enlarged)
+    best_hyperparam = evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams)
     
     # Compute y_train and y_test for baseline and regularised model.
     y_train, y_test = vectorise_rdm_to_train_and_test(outer_train_indices, outer_test_indices, output)
@@ -235,7 +231,7 @@ def run_outer_cross_validation_batch(splitter,
     return current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, regularized_score, best_hyperparam, outer_loop_count
 
 #%%
-def run_parallel(outer_run, splitter, rng_state, n_hyperparams, n_outputs, score_type, hyperparams, hyperparams_enlarged, inputs_z, output):
+def run_parallel(outer_run, splitter, rng_state, n_hyperparams, n_outputs, score_type, hyperparams, inputs_z, output):
     results = []
     for batch in outer_run:
         outer_train_indices = batch[0]
@@ -249,7 +245,6 @@ def run_parallel(outer_run, splitter, rng_state, n_hyperparams, n_outputs, score
                                                                                                 outer_train_indices, 
                                                                                                 score_type, 
                                                                                                 hyperparams, 
-                                                                                                hyperparams_enlarged, 
                                                                                                 outer_test_indices, 
                                                                                                 outer_loop_count, 
                                                                                                 inputs_z, 
@@ -278,8 +273,7 @@ def start_outer_cross_validation(n_conditions,
     #Possibly adapt naming of function input in predictor_distance.euclidian
     #accordingly.
     
-    hyperparams_enlarged = hyperparams.reshape(-1,1)
-    hyperparams_enlarged = np.repeat(hyperparams_enlarged, repeats=n_outputs, axis=1)
+
     n_hyperparams = len(hyperparams)
     
     # Pre-allocate empty arrayes in which, for each outer fold, the best hyperparamter,
@@ -312,7 +306,7 @@ def start_outer_cross_validation(n_conditions,
         number_cores = psutil.cpu_count(logical=False)
         jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run, splitter, rng_state, 
                                                                                        n_hyperparams, n_outputs, score_type, 
-                                                                                       hyperparams, hyperparams_enlarged, 
+                                                                                       hyperparams, 
                                                                                        inputs_z, output) for outer_run in np.array_split(outer_runs, number_cores)) 
         for job in jobs:
             results += job
@@ -323,7 +317,7 @@ def start_outer_cross_validation(n_conditions,
             current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, \
             regularized_score, best_hyperparam, outer_loop_count = run_outer_cross_validation_batch(splitter, rng_state, n_hyperparams, 
                                                                                                     n_outputs, outer_train_indices, 
-                                                                                                    score_type, hyperparams, hyperparams_enlarged, 
+                                                                                                    score_type, hyperparams, 
                                                                                                     outer_test_indices, outer_loop_count, inputs_z, output)
             results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, baseline_score, 
                             regularized_score, best_hyperparam, outer_loop_count])
@@ -370,7 +364,6 @@ def compute_hadamard_and_transpose(inputs_z, train_indices, test_indices):
     '''Compute Hadamard products for train and test set.'''
     X_fitted_train, *_ = hadamard(inputs_z[:, train_indices])
     X_fitted_test, first_pair_idx, second_pair_idx = hadamard(inputs_z[:, test_indices])
-
     X_fitted_train = X_fitted_train.transpose()
     X_fitted_test = X_fitted_test.transpose()
     return X_fitted_train, X_fitted_test, first_pair_idx, second_pair_idx
