@@ -10,7 +10,7 @@ import numpy as np
 from scipy.stats import spearmanr, pearsonr
 
 
-def scoring_unfitted(y_unfitted, x_unfitted, score_type='pearson'):
+def scoring_unfitted(y_unfitted: np.ndarray, x_unfitted: np.ndarray, score_type: str='pearson') -> float:
     """Returns one of three possible scores to be maximised"""
     
     n_outputs = y_unfitted.shape[1]
@@ -28,7 +28,7 @@ def scoring_unfitted(y_unfitted, x_unfitted, score_type='pearson'):
     return scores
 
 
-def scoring(y_true, y_pred, score_type='pearson'):
+def scoring(y_true: np.ndarray, y_pred: np.ndarray, score_type: str='pearson') -> np.ndarray:
     """Returns one of three possible scores to be maximised"""
     
     n_outputs = y_true.shape[1]
