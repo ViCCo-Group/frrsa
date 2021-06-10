@@ -64,12 +64,15 @@ def frrsa(target,
     except IndexError:
         n_targets = 1
 
-    y_unfitted = flatten_RDM(target)
-    x_unfitted = flatten_RDM(make_RDM(predictor, distance='pearson'))
+    y_classical = flatten_RDM(target)
+    x_classical = flatten_RDM(make_RDM(predictor, distance='pearson'))
  
     # Unfitted scores is classical RSA.
-    unfitted_scores = scoring_unfitted(y_unfitted, x_unfitted, score_type)
-
+    classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
+    classical_scores['score'] = scoring_unfitted(y_classical, x_classical, score_type)
+    classical_scores['target'] = list(range(n_targets))
+    classical_scores['RSA_kind'] = 'classical'
+    
     n_outer_cvs = outer_k * outer_reps
     
     #TODO: possibly condition scaling on which "predictor_distance" is used; if
@@ -93,26 +96,32 @@ def frrsa(target,
                                                              parallel)
 
     # 'n' is a numerical variable and denotes the distinct target RDMs.
-    n = np.array(list(range(n_targets)) * n_outer_cvs)+1
-    crossval = pd.DataFrame(data=np.array([score, fold, hyperparameter, n]).T, \
-                            columns=['score', 'fold', 'hyperparameter', 'n'])
+    targets = np.array(list(range(n_targets)) * n_outer_cvs)
+    reweighted_scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T, \
+                            columns=['score', 'fold', 'hyperparameter', 'target'])
 
     predictions = pd.DataFrame(data=np.delete(predictions, 0, 0), \
-                               columns=['y_test', 'y_regularized', 'n', 'fold', 'first_obj', 'second_obj'])
+                               columns=['y_test', 'y_regularized', 'target', 'fold', 'first_obj', 'second_obj'])
     
     if betas_wanted:
         X, *_ = hadamard(predictor)
         X = X.transpose()    
-        fracs = crossval.groupby(['n'])['hyperparameter'].mean()
-        betas = final_model(X, y_unfitted, fracs)
+        fracs = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
+        betas = final_model(X, y_classical, fracs)
         betas = pd.DataFrame(data=betas, \
-                             columns=['betas_n_{0}'.format(i+1) for i in range(n_targets)])
+                             columns=['betas_target_{0}'.format(i+1) for i in range(n_targets)])
     else:
         betas = None
     
+    reweighted_scores['score'] = reweighted_scores['score'].apply(np.arctanh)
+    reweighted_scores = reweighted_scores.groupby(['target'])['score'].mean().reset_index()
+    reweighted_scores['RSA_kind'] = 'reweighted'
+    
+    scores = pd.concat([classical_scores, reweighted_scores], axis=0)
+    
     # Collapse the RDMs along the diagonal, sum & divide, and put pack in array.
     predicted_RDM_re = collapse_RDM(n_conditions, n_targets, predicted_RDM, predicted_RDM_counter)
-    return predicted_RDM_re, predictions, unfitted_scores, crossval, betas
+    return predicted_RDM_re, predictions, scores, betas
 
 #%%
 def start_outer_cross_validation(n_conditions, 
@@ -186,7 +195,7 @@ def start_outer_cross_validation(n_conditions,
         
         start_idx = outer_loop_count * n_targets
         score[start_idx:start_idx+n_targets] = regularized_score
-        fold[start_idx:start_idx+n_targets] = outer_loop_count+1
+        fold[start_idx:start_idx+n_targets] = outer_loop_count
         hyperparameter[start_idx:start_idx+n_targets] = best_hyperparam
 
         predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
@@ -233,9 +242,9 @@ def run_outer_cross_validation_batch(splitter,
     
     # Save predictions of the current outer CV with extra info.
     # Note: 'n' is a numerical variable and denotes the distinct target RDMs.
-    n = np.empty((y_test.shape))
-    n[:,:] = list(range(n_targets))
-    n = n.reshape(len(n)*n_targets, order='F')+1
+    targets = np.empty((y_test.shape))
+    targets[:,:] = list(range(n_targets))
+    targets = targets.reshape(len(targets)*n_targets, order='F')
 
     y_test_reshaped = y_test.reshape(len(y_test)*n_targets, order='F') #make all ys 1D.
     y_regularized_reshaped = y_regularized.reshape(len(y_regularized)*n_targets, order='F')
@@ -243,8 +252,8 @@ def run_outer_cross_validation_batch(splitter,
     first_pair_obj_tiled = np.tile(first_pair_obj, n_targets)
     second_pair_obj_tiled = np.tile(second_pair_obj, n_targets)
 
-    fold = np.array([outer_loop_count+1] * len(y_test_reshaped))
-    current_predictions = np.array([y_test_reshaped, y_regularized_reshaped, n, fold, first_pair_obj_tiled, second_pair_obj_tiled]).T
+    fold = np.array([outer_loop_count] * len(y_test_reshaped))
+    current_predictions = np.array([y_test_reshaped, y_regularized_reshaped, targets, fold, first_pair_obj_tiled, second_pair_obj_tiled]).T
     return current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score, best_hyperparam, outer_loop_count
 
 #%%

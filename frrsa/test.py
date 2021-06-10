@@ -29,15 +29,15 @@ betas_wanted = True
 parallel = True
 rng_state = 1
 
-predicted_RDM, predictions, unfitted_scores, crossval, betas = frrsa(target,
-                                                                     predictor, 
-                                                                     outer_k, 
-                                                                     outer_reps, 
-                                                                     splitter, 
-                                                                     hyperparams, 
-                                                                     score_type, 
-                                                                     betas_wanted,
-                                                                     parallel,
-                                                                     rng_state)
+predicted_RDM, predictions, scores, betas = frrsa(target,
+                                                 predictor, 
+                                                 outer_k, 
+                                                 outer_reps, 
+                                                 splitter, 
+                                                 hyperparams, 
+                                                 score_type, 
+                                                 betas_wanted,
+                                                 parallel,
+                                                 rng_state)
 
 #%% End of script
