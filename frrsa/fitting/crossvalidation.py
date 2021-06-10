@@ -39,11 +39,7 @@ else:
 # Set global variables.
 z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 
-
 #%%
-#"inputs": channel*condition array.
-#"output": condition*condition array.
-
 #TODO: Add parameters to choose one of the predictor_distance funcs.
 def frrsa(output,
           inputs,
@@ -53,7 +49,6 @@ def frrsa(output,
           hyperparams=None,
           score_type='pearson',
           betas_wanted=False,
-          sanity=False,
           rng_state=None,
           parallel=False):
     """ Implements repated, nested cross-validated FRRRSA."""
@@ -75,12 +70,9 @@ def frrsa(output,
     x_unfitted = flatten_RDM(make_RDM(inputs, distance='pearson'))
  
     # Unfitted scores is classical RSA.
-    unfitted_scores = {}
-    #TODO: deprecate those unfitted scores that are not requested in frrsa(score_type)
-    key_list = ['pearson', 'spearman', 'RSS']
-    for key in key_list:
-        unfitted_scores[key] = scoring_unfitted(y_unfitted, x_unfitted, key)
-             
+    unfitted_scores = scoring_unfitted(y_unfitted, x_unfitted, score_type)
+
+
     n_outer_cvs = outer_k * outer_reps
     n_models = 2 # baseline and regularized model.
     
@@ -122,13 +114,8 @@ def frrsa(output,
     
     # Collapse the RDMs along the diagonal, sum & divide, and put pack in array.
     predicted_RDM_re = collapse_RDM(n_conditions, n_outputs, predicted_RDM, predicted_RDM_counter)
-    # Compute correlation between fitted RDMs and output RDM.
-    flattend_pred_RDM = flatten_RDM(predicted_RDM_re)
-    del_ind = np.where(flattend_pred_RDM[:,0]==9999)[0]
-    flattend_pred_RDM_del = np.delete(flattend_pred_RDM, del_ind, axis=0)
-    y_unfitted_del = np.delete(y_unfitted, del_ind, axis=0)
-    fitted_scores = scoring(flattend_pred_RDM_del, y_unfitted_del)
-    return predicted_RDM_re, predictions, unfitted_scores, crossval, fitted_scores, betas
+    
+    return predicted_RDM_re, predictions, unfitted_scores, crossval, betas
 
 #%%
 def start_inner_cross_validation(splitter, rng_state, n_hyperparams, n_outputs, outer_train_indices, inputs_z, output, score_type, hyperparams):
