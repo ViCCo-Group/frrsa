@@ -47,8 +47,8 @@ def frrsa(target,
           hyperparams=None,
           score_type='pearson',
           betas_wanted=False,
-          rng_state=None,
-          parallel=False):
+          parallel=False,
+          rng_state=None):
     """ Implements repated, nested cross-validated FRRRSA."""
     
     if hyperparams is None:
