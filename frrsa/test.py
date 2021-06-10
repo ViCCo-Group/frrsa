@@ -15,8 +15,8 @@ n_objects = 100 # How many objects aka conditions?
 n_outputs = 2 # How many different outputs?
 
 # Simulate output and inputs.
-output = rng.integers(low=0, high=100, size=(n_objects,n_objects,n_outputs))
-inputs = rng.integers(low=0, high=100, size=(n_units,n_objects))
+target = rng.integers(low=0, high=100, size=(n_objects,n_objects,n_outputs))
+predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 
 #%% Call the main funtion.
@@ -29,8 +29,8 @@ betas_wanted = True
 rng_state = 1
 parallel = True
 
-predicted_RDM_re, predictions, unfitted_scores, crossval, betas = frrsa(output,
-                                                                        inputs, 
+predicted_RDM_re, predictions, unfitted_scores, crossval, betas = frrsa(target,
+                                                                        predictor, 
                                                                         outer_k, 
                                                                         outer_reps, 
                                                                         splitter, 
