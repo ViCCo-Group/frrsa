@@ -218,16 +218,14 @@ def run_outer_cross_validation_batch(splitter,
                                                             hyperparams)
     
     best_hyperparam = evaluate_best_hyperparams(inner_hyperparams_scores, hyperparams)
-    
-    y_train, y_test = vectorise_rdm_to_train_and_test(outer_train_indices, outer_test_indices, target)
-    
-    regularized_score, first_pair_idx, second_pair_idx, y_regularized = fit_and_score_out(predictor, 
-                                                                                          y_train, 
-                                                                                          y_test,
-                                                                                          outer_train_indices, 
-                                                                                          outer_test_indices, 
-                                                                                          score_type, 
-                                                                                          best_hyperparam)
+        
+    regularized_score, first_pair_idx, second_pair_idx, y_regularized, y_test = fit_and_score(predictor, 
+                                                                                              target,
+                                                                                              outer_train_indices, 
+                                                                                              outer_test_indices, 
+                                                                                              score_type, 
+                                                                                              best_hyperparam,
+                                                                                              place='out')
 
     first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
                                         outer_test_indices[second_pair_idx]
@@ -300,7 +298,7 @@ def start_inner_cross_validation(splitter,
     for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
         inner_loop_count += 1
         train_idx, test_idx = outer_train_indices[inner_train_indices], outer_train_indices[inner_test_indices]
-        score_in = fit_and_score_in(predictor, target, train_idx, test_idx, score_type, hyperparams)
+        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, place='in')
         inner_hyperparams_scores[:, :, inner_loop_count] = score_in
     return inner_hyperparams_scores
 
@@ -351,28 +349,15 @@ def vectorise_rdm_to_train_and_test(train_indices, test_indices, target):
     return y_train, y_test
 
 #%%
-def fit_and_score_in(predictor, target, train_idx, test_idx, score_type, hyperparams):
-    """ Fit model, find hyperparamter value and score in the inner cross validation."""
-    X_train, X_test, *_ = compute_hadamard_and_transpose(predictor, train_idx, test_idx)
-    y_train, y_test = vectorise_rdm_to_train_and_test(train_idx, test_idx, target)
-    # Fit model for each candidate hyperparamter and get its score.
-    y_pred = find_hyperparameters(X_train, X_test, y_train, y_test, hyperparams)
-    score = scoring(y_test, y_pred, score_type=score_type)
-    return score
-
-#%%
-def fit_and_score_out(predictor, y_train, y_test, train_idx, test_idx, score_type, hyperparams):
+def fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, place):
     """ Fit model and get its score in outer cross validation."""
     X_train, X_test, first_pair_idx, second_pair_idx = compute_hadamard_and_transpose(predictor, train_idx, test_idx)
-    # Fit model and get predictions and parameters.
-    y_pred = regularized_model(X_train, 
-                               X_test, 
-                               y_train, 
-                               y_test, 
-                               hyperparams)
-    # Based on predictions and test data, evaluate fit.
+    y_train, y_test = vectorise_rdm_to_train_and_test(train_idx, test_idx, target)
+    if place=='in':
+        y_pred = find_hyperparameters(X_train, X_test, y_train, y_test, hyperparams)
+    elif place=='out':
+        y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams)
     score = scoring(y_test, y_pred, score_type=score_type)
-    return score, first_pair_idx, second_pair_idx, y_pred
-
+    return score, first_pair_idx, second_pair_idx, y_pred, y_test
 
 #%% End of script.
