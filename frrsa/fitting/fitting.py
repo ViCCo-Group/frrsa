@@ -5,7 +5,6 @@
 """
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
 
 #TODO: remove the following imports and conditionals before publicising repo.
 from pathlib import Path
@@ -32,17 +31,6 @@ def prepare_variables(X_train, X_test, y_train):
     y_train_mean = np.mean(y_train, axis=0)
     y_train = y_train - y_train_mean
     return X_train_z, X_test_z, y_train, y_train_mean
-
-def baseline_model(x_train, x_test, y_train):
-    #TODO: deprecate.
-    """Cross-validates simple linear regression for two dissimilarity vectors"""
-    model = LinearRegression(fit_intercept=True,
-                             normalize=False,
-                             copy_X=False,
-                             n_jobs=None)
-    model.fit(x_train, y_train)
-    y_predicted = model.predict(x_test)
-    return y_predicted
 
 def find_hyperparameters(X_train, X_test, y_train, y_test, fracs):
     """"Performs crossvalidated fracridge for possibly several outputs using all candidate hyperparameters for each output"""
