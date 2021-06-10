@@ -17,7 +17,7 @@ else:
 z_score = StandardScaler(copy=True, with_mean=True, with_std=True)
 
 def count_outputs(y):
-    """Returns number of separate output variables"""
+    """Returns number of separate target variables"""
     if y.ndim==2:
         return y.shape[1]
     else: 
@@ -33,14 +33,14 @@ def prepare_variables(X_train, X_test, y_train):
     return X_train_z, X_test_z, y_train, y_train_mean
 
 def find_hyperparameters(X_train, X_test, y_train, y_test, fracs):
-    """"Performs crossvalidated fracridge for possibly several outputs using all candidate hyperparameters for each output"""
+    """"Performs crossvalidated fracridge for possibly several outputs using all candidate hyperparameters for each target"""
     X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, X_test, y_train)
     y_predicted, *_ = fracridge(X_train, y_train, X_test_z, fracs)
     y_predicted += y_train_mean
     return y_predicted
 
 def regularized_model(X_train, X_test, y_train, y_test, fracs):
-    """Performs crossvalidated fracridge for possibly several outputs using each output's best hyperparameter"""
+    """Performs crossvalidated fracridge for possibly several outputs using each target's best hyperparameter"""
     X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, X_test, y_train)
     n_outputs = count_outputs(y_train)
     y_predicted = np.zeros((y_test.shape[0],n_outputs))
@@ -56,7 +56,7 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs):
     return y_predicted
 
 def final_model(X, y, fracs):
-    """Performs fracridge on the whole dataset for possibly several outputs using each output's best hyperparameter"""
+    """Performs fracridge on the whole dataset for possibly several outputs using each target's best hyperparameter"""
     X = z_score.fit_transform(X)
     X_means = z_score.mean_.reshape(-1,1)
     X_stds = z_score.scale_
