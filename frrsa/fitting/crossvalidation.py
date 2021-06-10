@@ -330,15 +330,33 @@ def collapse_RDM(n_conditions,
     return predicted_RDM_re
 
 #%%
-def compute_hadamard_and_transpose(predictor,
-                                   train_indices,
-                                   test_indices):
-    '''Compute Hadamard products for train and test set.'''
+def compute_predictor_distance(predictor,
+                               train_indices,
+                               test_indices):
+    '''Compute feature-specific distances for the predictor for train and test set.'''
     X_fitted_train, *_ = hadamard(predictor[:, train_indices])
     X_fitted_test, first_pair_idx, second_pair_idx = hadamard(predictor[:, test_indices])
     X_fitted_train = X_fitted_train.transpose()
     X_fitted_test = X_fitted_test.transpose()
     return X_fitted_train, X_fitted_test, first_pair_idx, second_pair_idx
+
+#%%
+def fit_and_score(predictor,
+                  target,
+                  train_idx,
+                  test_idx,
+                  score_type,
+                  hyperparams,
+                  place):
+    """ Fit ridge regression and get its predictions and scores for a given cross validation."""
+    X_train, X_test, first_pair_idx, second_pair_idx = compute_predictor_distance(predictor, train_idx, test_idx)
+    y_train, y_test = vectorise_rdm_to_train_and_test(train_idx, test_idx, target)
+    if place=='in':
+        y_pred = find_hyperparameters(X_train, X_test, y_train, y_test, hyperparams)
+    elif place=='out':
+        y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams)
+    score = scoring(y_test, y_pred, score_type=score_type)
+    return score, first_pair_idx, second_pair_idx, y_pred, y_test
 
 #%%
 def vectorise_rdm_to_train_and_test(train_indices,
@@ -350,23 +368,5 @@ def vectorise_rdm_to_train_and_test(train_indices,
     ixgrid = np.ix_(test_indices, test_indices)
     y_test = flatten_RDM(target[ixgrid])
     return y_train, y_test
-
-#%%
-def fit_and_score(predictor,
-                  target,
-                  train_idx,
-                  test_idx,
-                  score_type,
-                  hyperparams,
-                  place):
-    """ Fit ridge regression and get its predictions and scores for a given cross validation."""
-    X_train, X_test, first_pair_idx, second_pair_idx = compute_hadamard_and_transpose(predictor, train_idx, test_idx)
-    y_train, y_test = vectorise_rdm_to_train_and_test(train_idx, test_idx, target)
-    if place=='in':
-        y_pred = find_hyperparameters(X_train, X_test, y_train, y_test, hyperparams)
-    elif place=='out':
-        y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams)
-    score = scoring(y_test, y_pred, score_type=score_type)
-    return score, first_pair_idx, second_pair_idx, y_pred, y_test
 
 #%% End of script.
