@@ -350,23 +350,13 @@ def fit_and_score(predictor,
                   place):
     """ Fit ridge regression and get its predictions and scores for a given cross validation."""
     X_train, X_test, first_pair_idx, second_pair_idx = compute_predictor_distance(predictor, train_idx, test_idx)
-    y_train, y_test = vectorise_rdm_to_train_and_test(train_idx, test_idx, target)
+    y_train = flatten_RDM(target[np.ix_(train_idx, train_idx)])
+    y_test = flatten_RDM(target[np.ix_(test_idx, test_idx)])
     if place=='in':
         y_pred = find_hyperparameters(X_train, X_test, y_train, y_test, hyperparams)
     elif place=='out':
         y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams)
     score = scoring(y_test, y_pred, score_type=score_type)
     return score, first_pair_idx, second_pair_idx, y_pred, y_test
-
-#%%
-def vectorise_rdm_to_train_and_test(train_indices,
-                                    test_indices,
-                                    target):
-    """ Create vectorized RDMs for train and test sets. """
-    ixgrid = np.ix_(train_indices, train_indices)
-    y_train = flatten_RDM(target[ixgrid])
-    ixgrid = np.ix_(test_indices, test_indices)
-    y_test = flatten_RDM(target[ixgrid])
-    return y_train, y_test
 
 #%% End of script.
