@@ -67,7 +67,6 @@ def frrsa(target,
     y_classical = flatten_RDM(target)
     x_classical = flatten_RDM(make_RDM(predictor, distance='pearson'))
  
-    # Unfitted scores is classical RSA.
     classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
     classical_scores['score'] = scoring_unfitted(y_classical, x_classical, score_type)
     classical_scores['target'] = list(range(n_targets))
@@ -95,10 +94,10 @@ def frrsa(target,
                                                              n_outer_cvs, 
                                                              parallel)
 
-    # 'n' is a numerical variable and denotes the distinct target RDMs.
+    # 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
     reweighted_scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T, \
-                            columns=['score', 'fold', 'hyperparameter', 'target'])
+                                     columns=['score', 'fold', 'hyperparameter', 'target'])
 
     predictions = pd.DataFrame(data=np.delete(predictions, 0, 0), \
                                columns=['y_test', 'y_regularized', 'target', 'fold', 'first_obj', 'second_obj'])
@@ -241,7 +240,7 @@ def run_outer_cross_validation_batch(splitter,
                                       outer_test_indices[second_pair_idx]
     
     # Save predictions of the current outer CV with extra info.
-    # Note: 'n' is a numerical variable and denotes the distinct target RDMs.
+    # Note: 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.empty((y_test.shape))
     targets[:,:] = list(range(n_targets))
     targets = targets.reshape(len(targets)*n_targets, order='F')
@@ -302,7 +301,7 @@ def start_inner_cross_validation(splitter,
     inner_k, inner_reps = 5, 5
     inner_cv = data_splitter(splitter, inner_k, inner_reps, random_state=rng_state)
     inner_hyperparams_scores = np.empty((n_hyperparams, n_targets, (inner_k * inner_reps)))
-    # NOTE: In the following loop, rkf.split is applied to the outer_train_indices!
+    # Note: In the following loop, rkf.split is applied to the outer_train_indices!
     inner_loop_count = -1
     for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
         inner_loop_count += 1
