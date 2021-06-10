@@ -51,15 +51,11 @@ def correlate_RDMs(rdv1, rdv2, correlation='pearson'):
 #%%
 
 def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlation='pearson'):
-
     rdm1 = make_RDM(activity_pattern_matrix_1)
     rdm2 = make_RDM(activity_pattern_matrix_2)
-
     rdv1 = flatten_RDM(rdm1)
     rdv2 = flatten_RDM(rdm2)
-
     corr, p_value = correlate_RDMs(rdv1, rdv2, correlation)
-
     return corr, p_value
 #TODO: implement multiple matrices.
 
@@ -67,9 +63,7 @@ def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, correlati
 
 def noise_ceiling(reference_rdms, correlation='pearson'):
     n_subjects = reference_rdms.shape[2]
-    
     reference_rdms = flatten_RDM(reference_rdms)
-    
     if correlation=='pearson':
         reference_rdms = (reference_rdms - reference_rdms.mean(0)) / reference_rdms.std(0)
     elif correlation=='spearman':
@@ -77,12 +71,10 @@ def noise_ceiling(reference_rdms, correlation='pearson'):
     #TODO: maybe implement Kendall's tau_a
     
     reference_rdm_average = np.mean(reference_rdms, axis=1)
-    
     upper_bound = 0
     lower_bound = 0
     
     for n in range(n_subjects):
-        
         index = list(range(n_subjects))
         index.remove(n)
         rdm_n = reference_rdms[:,n]
@@ -93,7 +85,6 @@ def noise_ceiling(reference_rdms, correlation='pearson'):
         
     upper_bound /= n_subjects
     lower_bound /= n_subjects
-    
     return np.array([upper_bound, lower_bound])
 
 

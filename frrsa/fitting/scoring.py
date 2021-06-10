@@ -9,7 +9,6 @@ Created on Fri Oct 16 16:44:31 2020
 import numpy as np
 from scipy.stats import spearmanr, pearsonr
 
-
 def scoring_unfitted(y_unfitted: np.ndarray, x_unfitted: np.ndarray, score_type: str='pearson') -> float:
     """Returns one of three possible scores to be maximised"""
     
@@ -26,7 +25,6 @@ def scoring_unfitted(y_unfitted: np.ndarray, x_unfitted: np.ndarray, score_type:
             scores[target] = -((y_unfitted[:, target] - x_unfitted[:, 0]) ** 2).sum()
             
     return scores
-
 
 def scoring(y_true: np.ndarray, y_pred: np.ndarray, score_type: str='pearson') -> np.ndarray:
     """Returns one of three possible scores to be maximised"""
@@ -73,5 +71,4 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray, score_type: str='pearson') -
                 scores[alpha] = spearmanr(y_true[:, 0], y_pred[:, alpha])[0]
             elif score_type == 'RSS':
                 scores[alpha] = -((y_true[:, 0] - y_pred[:, alpha]) ** 2).sum()
-            
     return scores
