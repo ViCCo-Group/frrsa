@@ -8,7 +8,6 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-import multiprocessing
 import psutil
 from joblib import Parallel, delayed
 
@@ -41,6 +40,7 @@ z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
 #TODO: Add parameters to choose one of the predictor_distance funcs.
 def frrsa(target,
           predictor,
+          distance,
           outer_k=5,
           outer_reps=10,
           splitter='random',
@@ -94,7 +94,8 @@ def frrsa(target,
                                                              hyperparams, 
                                                              n_outer_cvs, 
                                                              parallel,
-                                                             predictions_wanted)
+                                                             predictions_wanted,
+                                                             distance)
 
     # 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
@@ -108,8 +109,8 @@ def frrsa(target,
         predictions = None
         
     if betas_wanted:
-        X, *_ = hadamard(predictor)
-        X = X.transpose()    
+        idx = list(range(n_conditions)) # all conditions.
+        X, *_ = compute_predictor_distance(predictor, idx, distance)
         fracs = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
         betas = final_model(X, y_classical, fracs)
         betas = pd.DataFrame(data=betas, \
@@ -140,7 +141,8 @@ def start_outer_cross_validation(n_conditions,
                                  hyperparams,
                                  n_outer_cvs,
                                  parallel,
-                                 predictions_wanted):
+                                 predictions_wanted,
+                                 distance):
     
     predicted_RDM = np.zeros((n_conditions, n_conditions, n_targets))
     predicted_RDM_counter = np.zeros((n_conditions, n_conditions, n_targets))
@@ -178,7 +180,7 @@ def start_outer_cross_validation(n_conditions,
         jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run, splitter, rng_state, 
                                                                                        n_hyperparams, n_targets, score_type, 
                                                                                        hyperparams, 
-                                                                                       predictor, target, predictions_wanted) for outer_run in np.array_split(outer_runs, number_cores)) 
+                                                                                       predictor, target, predictions_wanted, distance) for outer_run in np.array_split(outer_runs, number_cores)) 
         for job in jobs:
             results += job
     else:
@@ -189,7 +191,7 @@ def start_outer_cross_validation(n_conditions,
                                                                                                     n_targets, outer_train_indices, 
                                                                                                     score_type, hyperparams, 
                                                                                                     outer_test_indices, outer_loop_count, predictor, target,
-                                                                                                    predictions_wanted)
+                                                                                                    predictions_wanted, distance)
             results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, 
                             regularized_score, best_hyperparam, outer_loop_count])
 
@@ -224,7 +226,8 @@ def run_outer_cross_validation_batch(splitter,
                                      outer_loop_count,
                                      predictor,
                                      target,
-                                     predictions_wanted):
+                                     predictions_wanted,
+                                     distance):
     
     inner_hyperparams_scores = start_inner_cross_validation(splitter, 
                                                             rng_state, 
@@ -234,7 +237,8 @@ def run_outer_cross_validation_batch(splitter,
                                                             predictor, 
                                                             target, 
                                                             score_type, 
-                                                            hyperparams)
+                                                            hyperparams,
+                                                            distance)
     
     best_hyperparam = evaluate_hyperparams(inner_hyperparams_scores, 
                                            hyperparams)
@@ -246,6 +250,7 @@ def run_outer_cross_validation_batch(splitter,
                                              outer_test_indices, 
                                              score_type, 
                                              best_hyperparam,
+                                             distance,
                                              place='out')
  
     first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
@@ -279,7 +284,8 @@ def run_parallel(outer_run,
                  hyperparams,
                  predictor,
                  target,
-                 predictions_wanted):
+                 predictions_wanted,
+                 distance):
     results = []
     for batch in outer_run:
         outer_train_indices = batch[0]
@@ -297,11 +303,11 @@ def run_parallel(outer_run,
                                                                                                 outer_loop_count, 
                                                                                                 predictor, 
                                                                                                 target,
-                                                                                                predictions_wanted)
+                                                                                                predictions_wanted,
+                                                                                                distance)
         results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score, 
                         best_hyperparam, outer_loop_count])
     return results
-
 
 #%%
 def start_inner_cross_validation(splitter,
@@ -312,7 +318,8 @@ def start_inner_cross_validation(splitter,
                                  predictor,
                                  target,
                                  score_type,
-                                 hyperparams):
+                                 hyperparams,
+                                 distance):
     # Set up inner cross-validation.
     inner_k, inner_reps = 5, 5
     inner_cv = data_splitter(splitter, inner_k, inner_reps, random_state=rng_state)
@@ -322,7 +329,7 @@ def start_inner_cross_validation(splitter,
     for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
         inner_loop_count += 1
         train_idx, test_idx = outer_train_indices[inner_train_indices], outer_train_indices[inner_test_indices]
-        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, place='in')
+        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, distance, place='in')
         inner_hyperparams_scores[:, :, inner_loop_count] = score_in
     return inner_hyperparams_scores
 
@@ -355,14 +362,13 @@ def collapse_RDM(n_conditions,
 
 #%%
 def compute_predictor_distance(predictor,
-                               train_indices,
-                               test_indices):
-    '''Compute feature-specific distances for the predictor for train and test set.'''
-    X_fitted_train, *_ = hadamard(predictor[:, train_indices])
-    X_fitted_test, first_pair_idx, second_pair_idx = hadamard(predictor[:, test_indices])
-    X_fitted_train = X_fitted_train.transpose()
-    X_fitted_test = X_fitted_test.transpose()
-    return X_fitted_train, X_fitted_test, first_pair_idx, second_pair_idx
+                               idx,
+                               distance):
+    '''Compute feature-specific distances for the predictor.'''
+    if distance=='Hadamard':
+        X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])
+        X = X.transpose()
+    return X, first_pair_idx, second_pair_idx
 
 #%%
 def fit_and_score(predictor,
@@ -371,9 +377,11 @@ def fit_and_score(predictor,
                   test_idx,
                   score_type,
                   hyperparams,
+                  distance,
                   place):
     """ Fit ridge regression and get its predictions and scores for a given cross validation."""
-    X_train, X_test, first_pair_idx, second_pair_idx = compute_predictor_distance(predictor, train_idx, test_idx)
+    X_train, *_ = compute_predictor_distance(predictor, train_idx, distance)
+    X_test, first_pair_idx, second_pair_idx = compute_predictor_distance(predictor, test_idx, distance)
     y_train = flatten_RDM(target[np.ix_(train_idx, train_idx)])
     y_test = flatten_RDM(target[np.ix_(test_idx, test_idx)])
     if place=='in':

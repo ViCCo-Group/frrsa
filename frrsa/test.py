@@ -6,7 +6,6 @@
 
 from numpy.random import default_rng
 from fitting.crossvalidation import frrsa
-
 # Specify a seed for reproducible results.
 rng = default_rng(seed=4)
 
@@ -20,18 +19,20 @@ predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 
 #%% Call the main funtion.
+distance = 'Hadamard'
 outer_k = 2
 outer_reps = 3
 splitter = 'random'
 hyperparams = None
 score_type = 'pearson'
 betas_wanted = True
-predictions_wanted=False
+predictions_wanted=True
 parallel = True
 rng_state = 1
 
 predicted_RDM, predictions, scores, betas = frrsa(target,
                                                  predictor, 
+                                                 distance,
                                                  outer_k, 
                                                  outer_reps, 
                                                  splitter, 
