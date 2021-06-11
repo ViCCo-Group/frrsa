@@ -47,6 +47,7 @@ def frrsa(target,
           hyperparams=None,
           score_type='pearson',
           betas_wanted=False,
+          predictions_wanted=False,
           parallel=False,
           rng_state=None):
     """ Implements repated, nested cross-validated FRRRSA."""
@@ -92,16 +93,20 @@ def frrsa(target,
                                                              score_type, 
                                                              hyperparams, 
                                                              n_outer_cvs, 
-                                                             parallel)
+                                                             parallel,
+                                                             predictions_wanted)
 
     # 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
     reweighted_scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T, \
                                      columns=['score', 'fold', 'hyperparameter', 'target'])
-
-    predictions = pd.DataFrame(data=np.delete(predictions, 0, 0), \
-                               columns=['y_test', 'y_regularized', 'target', 'fold', 'first_obj', 'second_obj'])
     
+    if predictions_wanted:
+        predictions = pd.DataFrame(data=np.delete(predictions, 0, 0), \
+                                   columns=['y_test', 'y_regularized', 'target', 'fold', 'first_obj', 'second_obj'])
+    else:
+        predictions = None
+        
     if betas_wanted:
         X, *_ = hadamard(predictor)
         X = X.transpose()    
@@ -134,7 +139,8 @@ def start_outer_cross_validation(n_conditions,
                                  score_type, 
                                  hyperparams,
                                  n_outer_cvs,
-                                 parallel):
+                                 parallel,
+                                 predictions_wanted):
     
     predicted_RDM = np.zeros((n_conditions, n_conditions, n_targets))
     predicted_RDM_counter = np.zeros((n_conditions, n_conditions, n_targets))
@@ -150,7 +156,8 @@ def start_outer_cross_validation(n_conditions,
     # Pre-allocate an empty array in which all predictions of the fitted
     # model, the resepective y_test, factors denoting fold and target
     # and the pairs to which predictions belong will be saved.
-    predictions = np.zeros((1,6))
+    if predictions_wanted:
+        predictions = np.zeros((1,6))
 
     # Set up outer cross-validation.
     outer_cv = data_splitter(splitter, outer_k, outer_reps, random_state=rng_state)
@@ -171,7 +178,7 @@ def start_outer_cross_validation(n_conditions,
         jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run, splitter, rng_state, 
                                                                                        n_hyperparams, n_targets, score_type, 
                                                                                        hyperparams, 
-                                                                                       predictor, target) for outer_run in np.array_split(outer_runs, number_cores)) 
+                                                                                       predictor, target, predictions_wanted) for outer_run in np.array_split(outer_runs, number_cores)) 
         for job in jobs:
             results += job
     else:
@@ -181,7 +188,8 @@ def start_outer_cross_validation(n_conditions,
             regularized_score, best_hyperparam, outer_loop_count = run_outer_cross_validation_batch(splitter, rng_state, n_hyperparams, 
                                                                                                     n_targets, outer_train_indices, 
                                                                                                     score_type, hyperparams, 
-                                                                                                    outer_test_indices, outer_loop_count, predictor, target)
+                                                                                                    outer_test_indices, outer_loop_count, predictor, target,
+                                                                                                    predictions_wanted)
             results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, 
                             regularized_score, best_hyperparam, outer_loop_count])
 
@@ -189,8 +197,11 @@ def start_outer_cross_validation(n_conditions,
     for result in results:
         current_predictions, y_regularized, first_pair_obj, second_pair_obj, \
         regularized_score, best_hyperparam, outer_loop_count = result
-
-        predictions = np.concatenate((predictions, current_predictions), axis=0)
+        
+        if predictions_wanted:
+            predictions = np.concatenate((predictions, current_predictions), axis=0)
+        else:
+            predictions = None
         
         start_idx = outer_loop_count * n_targets
         score[start_idx:start_idx+n_targets] = regularized_score
@@ -212,7 +223,8 @@ def run_outer_cross_validation_batch(splitter,
                                      outer_test_indices, 
                                      outer_loop_count,
                                      predictor,
-                                     target):
+                                     target,
+                                     predictions_wanted):
     
     inner_hyperparams_scores = start_inner_cross_validation(splitter, 
                                                             rng_state, 
@@ -234,7 +246,7 @@ def run_outer_cross_validation_batch(splitter,
                                              outer_test_indices, 
                                              score_type, 
                                              best_hyperparam,
-                                            place='out')
+                                             place='out')
  
     first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
                                       outer_test_indices[second_pair_idx]
@@ -245,14 +257,16 @@ def run_outer_cross_validation_batch(splitter,
     targets[:,:] = list(range(n_targets))
     targets = targets.reshape(len(targets)*n_targets, order='F')
 
-    y_test_reshaped = y_test.reshape(len(y_test)*n_targets, order='F') #make all ys 1D.
-    y_regularized_reshaped = y_regularized.reshape(len(y_regularized)*n_targets, order='F')
-
-    first_pair_obj_tiled = np.tile(first_pair_obj, n_targets)
-    second_pair_obj_tiled = np.tile(second_pair_obj, n_targets)
-
-    fold = np.array([outer_loop_count] * len(y_test_reshaped))
-    current_predictions = np.array([y_test_reshaped, y_regularized_reshaped, targets, fold, first_pair_obj_tiled, second_pair_obj_tiled]).T
+    if predictions_wanted:
+        y_test_reshaped = y_test.reshape(len(y_test)*n_targets, order='F') #make all ys 1D.
+        y_regularized_reshaped = y_regularized.reshape(len(y_regularized)*n_targets, order='F')
+        first_pair_obj_tiled = np.tile(first_pair_obj, n_targets)
+        second_pair_obj_tiled = np.tile(second_pair_obj, n_targets)
+        fold = np.array([outer_loop_count] * len(y_test_reshaped))
+        current_predictions = np.array([y_test_reshaped, y_regularized_reshaped, targets, fold, first_pair_obj_tiled, second_pair_obj_tiled]).T
+    else:
+        current_predictions = None
+        
     return current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score, best_hyperparam, outer_loop_count
 
 #%%
@@ -264,7 +278,8 @@ def run_parallel(outer_run,
                  score_type,
                  hyperparams,
                  predictor,
-                 target):
+                 target,
+                 predictions_wanted):
     results = []
     for batch in outer_run:
         outer_train_indices = batch[0]
@@ -281,7 +296,8 @@ def run_parallel(outer_run,
                                                                                                 outer_test_indices, 
                                                                                                 outer_loop_count, 
                                                                                                 predictor, 
-                                                                                                target)
+                                                                                                target,
+                                                                                                predictions_wanted)
         results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score, 
                         best_hyperparam, outer_loop_count])
     return results

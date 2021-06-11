@@ -26,6 +26,7 @@ splitter = 'random'
 hyperparams = None
 score_type = 'pearson'
 betas_wanted = True
+predictions_wanted=False
 parallel = True
 rng_state = 1
 
@@ -37,6 +38,7 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
                                                  hyperparams, 
                                                  score_type, 
                                                  betas_wanted,
+                                                 predictions_wanted,
                                                  parallel,
                                                  rng_state)
 
