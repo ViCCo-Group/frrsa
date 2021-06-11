@@ -29,9 +29,6 @@ else:
     from frrsa.frrsa.helper.predictor_distance import hadamard
     from frrsa.frrsa.fitting.scoring import scoring, scoring_unfitted
     from frrsa.frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
-# import matplotlib as mpl
-# Suppress printing figures to a display.
-# mpl.use('Agg')
 
 # Set global variables.
 z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
@@ -161,7 +158,6 @@ def start_outer_cross_validation(n_conditions,
     if predictions_wanted:
         predictions = np.zeros((1,6))
 
-    # Set up outer cross-validation.
     outer_cv = data_splitter(splitter, outer_k, outer_reps, random_state=rng_state)
     list_of_indices = list(range(n_conditions))
     
@@ -175,23 +171,37 @@ def start_outer_cross_validation(n_conditions,
             outer_loop_count += 1
             outer_runs.append([outer_train_indices, outer_test_indices, outer_loop_count])
 
-        # use physical cores
-        number_cores = psutil.cpu_count(logical=False)
-        jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run, splitter, rng_state, 
-                                                                                       n_hyperparams, n_targets, score_type, 
+        number_cores = psutil.cpu_count(logical=False) # use physical cores.
+        jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run, 
+                                                                                       splitter, 
+                                                                                       rng_state, 
+                                                                                       n_hyperparams, 
+                                                                                       n_targets, 
+                                                                                       score_type, 
                                                                                        hyperparams, 
-                                                                                       predictor, target, predictions_wanted, distance) for outer_run in np.array_split(outer_runs, number_cores)) 
+                                                                                       predictor, 
+                                                                                       target, 
+                                                                                       predictions_wanted, 
+                                                                                       distance) for outer_run in np.array_split(outer_runs, number_cores)) 
         for job in jobs:
             results += job
     else:
         for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
             outer_loop_count += 1
             current_predictions, y_regularized, first_pair_obj, second_pair_obj, \
-            regularized_score, best_hyperparam, outer_loop_count = run_outer_cross_validation_batch(splitter, rng_state, n_hyperparams, 
-                                                                                                    n_targets, outer_train_indices, 
-                                                                                                    score_type, hyperparams, 
-                                                                                                    outer_test_indices, outer_loop_count, predictor, target,
-                                                                                                    predictions_wanted, distance)
+            regularized_score, best_hyperparam, outer_loop_count = run_outer_cross_validation_batch(splitter, 
+                                                                                                    rng_state, 
+                                                                                                    n_hyperparams, 
+                                                                                                    n_targets, 
+                                                                                                    outer_train_indices, 
+                                                                                                    score_type, 
+                                                                                                    hyperparams, 
+                                                                                                    outer_test_indices, 
+                                                                                                    outer_loop_count, 
+                                                                                                    predictor,
+                                                                                                    target,
+                                                                                                    predictions_wanted, 
+                                                                                                    distance)
             results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, 
                             regularized_score, best_hyperparam, outer_loop_count])
 
@@ -320,7 +330,6 @@ def start_inner_cross_validation(splitter,
                                  score_type,
                                  hyperparams,
                                  distance):
-    # Set up inner cross-validation.
     inner_k, inner_reps = 5, 5
     inner_cv = data_splitter(splitter, inner_k, inner_reps, random_state=rng_state)
     inner_hyperparams_scores = np.empty((n_hyperparams, n_targets, (inner_k * inner_reps)))
