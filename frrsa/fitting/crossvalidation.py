@@ -31,7 +31,7 @@ else:
     from frrsa.frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
 
 # Set global variables.
-z_scale = StandardScaler(copy=True, with_mean=True, with_std=True)
+z_scale = StandardScaler(copy=False, with_mean=True, with_std=True)
 
 #%%
 #TODO: Add parameters to choose one of the predictor_distance funcs.
