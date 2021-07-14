@@ -14,7 +14,7 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
 else:
     from frrsa.frrsa.fitting.fracridge import fracridge
 
-z_score = StandardScaler(copy=True, with_mean=True, with_std=True)
+z_score = StandardScaler(copy=False, with_mean=True, with_std=True)
 
 def count_outputs(y):
     """Returns number of separate target variables"""
