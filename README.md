@@ -33,7 +33,7 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
 Arguments:
 - `target`: the RDM which you want to predict. Expected format is a (condition\*condition\*n_targets) numpy array. If n_targets==1, `targets` can be of shape (condition\*condition).
 - `predictor`: the RDM you want to use as a predictor. Expected format is a (channel\*condition) numpy array. 
-- `distance`: the distance measure used for both, the target and predictor RDM.
+- `distance`: the distance measure used for the predictor RDM.
 - `outer_k`: the fold size of the outer crossvalidation.
 - `outer_reps`: how often the outer k-fold is repeated.
 - `splitter`: how the data shall be split. If "random", data is split randomly. If "kfold", a classical k-fold crossvalidation is performed.
