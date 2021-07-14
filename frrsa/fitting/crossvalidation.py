@@ -374,7 +374,7 @@ def compute_predictor_distance(predictor,
                                idx,
                                distance):
     '''Compute feature-specific distances for the predictor.'''
-    if distance=='Hadamard':
+    if distance=='pearson':
         X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])
         X = X.transpose()
     return X, first_pair_idx, second_pair_idx

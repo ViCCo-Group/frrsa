@@ -19,7 +19,7 @@ predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 
 #%% Call the main funtion.
-distance = 'Hadamard'
+distance = 'pearson'
 outer_k = 2
 outer_reps = 3
 splitter = 'random'
