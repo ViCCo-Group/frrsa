@@ -1,15 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Spyder 4.1.4, Python 3.7.6 64-bit | Qt 5.9.6 | PyQt5 5.9.2 | Darwin 18.7.0
 """
-Created on Fri Oct 16 16:38:33 2020
+@author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
+"""
 
-@author: kaniuth
-"""
 import numpy as np
 from numba import prange, njit
 
 def hadamard(predictor):
-    '''Returns the element-wise products of all pairs of columns'''
+    '''Compute the Hadamard products for all column pairs.
+    
+    Parameters
+    ----------
+    predictor : ndarray
+        A 2d data array
+    
+    Returns
+    -------
+    hadamard_prod: ndarray
+        Hadamard products for all column-pairs of `predictor`.
+    '''
     m, n = predictor.shape
     hadamard_prod = np.empty((m, n * (n - 1) // 2), dtype = predictor.dtype)
     ind1 = (np.kron(np.arange(0, n).reshape((n, 1)), np.ones((n, 1)))).squeeze().astype(int)
@@ -28,9 +39,22 @@ def numba_func_parallel_trans(predictor, hadamard_prod, m, n):
     return hadamard_prod
 
 def euclidian(predictor, squared):
-    '''
-    Returns element-wise euclidian distance of all pairs of columns, either
-    squared or absolute.
+    '''Compute element-wise euclidian distance of all pairs of columns
+    
+    Compute the euclidian distance of each column-pair, separately for each 
+    row. Either use squared or standard euclidian distance.
+    
+    Parameters
+    ----------
+    predictor : ndarray
+        A 2d data array
+    squared : bool
+        Indicates whether to use standard or squared Euclidian distance.
+    
+    Returns
+    -------
+    X : ndarray
+        Euclidian distance between all column-pairs for each row.
     '''
     #TODO: needs to return first_pair_members, second_pair_members as well, until then not functional!
     #TODO: in higher-order package "crossvalidation" in line 224, adapt scaling if needed.

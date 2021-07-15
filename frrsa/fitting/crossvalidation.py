@@ -20,14 +20,14 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
     from helper.predictor_distance import hadamard
-    from fitting.scoring import scoring, scoring_unfitted
+    from fitting.scoring import scoring, scoring_classical
     from fitting.fitting import regularized_model, find_hyperparameters, final_model
 else:
     print('outside submodule')
     from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
     from frrsa.frrsa.helper.predictor_distance import hadamard
-    from frrsa.frrsa.fitting.scoring import scoring, scoring_unfitted
+    from frrsa.frrsa.fitting.scoring import scoring, scoring_classical
     from frrsa.frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
 
 # Set global variables.
@@ -66,7 +66,7 @@ def frrsa(target,
     x_classical = flatten_RDM(make_RDM(predictor, distance='pearson'))
  
     classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
-    classical_scores['score'] = scoring_unfitted(y_classical, x_classical, score_type)
+    classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
     classical_scores['target'] = list(range(n_targets))
     classical_scores['RSA_kind'] = 'classical'
     
@@ -394,7 +394,7 @@ def fit_and_score(predictor,
     y_train = flatten_RDM(target[np.ix_(train_idx, train_idx)])
     y_test = flatten_RDM(target[np.ix_(test_idx, test_idx)])
     if place=='in':
-        y_pred = find_hyperparameters(X_train, X_test, y_train, y_test, hyperparams)
+        y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams)
     elif place=='out':
         y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams)
     score = scoring(y_test, y_pred, score_type=score_type)
