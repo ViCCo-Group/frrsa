@@ -14,6 +14,8 @@ FRRSA is written in Python 3 using the [Anaconda distribution for Python](https:
 ### How to use
 See [ffrsa/test.py](https://github.com/PhilippKaniuth/frrsa/blob/master/frrsa/test.py) for a simple demonstration.
 
+Just import the main function and call it.
+
 ```py
 from fitting.crossvalidation import frrsa
 
@@ -30,30 +32,6 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   parallel=False,
                                                   rng_state=None)
 ```                                            
-Arguments:
-- `target`: the RDM which you want to predict. Expected format is a (condition\*condition\*n_targets) numpy array. If n_targets==1, `targets` can be of shape (condition\*condition).
-- `predictor`: the RDM you want to use as a predictor. Expected format is a (channel\*condition) numpy array. 
-- `distance`: the distance measure used for the predictor RDM.
-- `outer_k`: the fold size of the outer crossvalidation.
-- `outer_reps`: how often the outer k-fold is repeated.
-- `splitter`: how the data shall be split. If "random", data is split randomly. If "kfold", a classical k-fold crossvalidation is performed.
-- `hyperparams`: which hyperparameters you want to evaluate for the regularization scheme. If "None", a sensible default is chosen internally.
-- `score_type`: how your predicted reweighted dissimilarity values shall be related to the corresponding target dissimilarity values.
-- `betas_wanted`: a boolean value, indicating whether you want to have betas returned for each measurement channel.
-- `predictions_wanted`: a boolean value, indicating whether you want to receive all predicticted dissimilarities for all outer cross-validations.
-- `parallel`: a boolean value, indicating whether you want to parallelize the outer cross-validation using all your CPUs cores.
-- `rng_state`: ignore, will be deprecated in release-version. Keep the default.
-
-Returns:
-- `predicted_RDM`: a (condition\*condition\*n_target) numpy array populated with the predicted dissimilarities averaged across outer folds.
-- `predictions`: a pandasDataFrame which, for all folds and outputs separately, holds predicted and target dissimilarities and to which object pairs they belong. This is a potentially huge object.
-- `scores`: a pandasDataFrame which holds the scores for classical and feature-reweighted RSA for each target.
-- `betas`: a pandasDataFrame which holds the betas for each target's measurement channel.
-
-Notes regarding language:
-- `Measurement channel`: a generic umbrella term denoting things like a voxel, an MEG measurement channel, a unit of a DNN layer.
-- `Condition`: can mean, for example, an image or other stimulus for which you have an activity pattern.
-- `n_target`: the number of separate target-RDMs you want to predict using your predicting RDM. Different targets could for example be MEG RDMs from different time points or RDMs from different participants.
 
 
 ## FAQ
