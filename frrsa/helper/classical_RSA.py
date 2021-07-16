@@ -68,8 +68,8 @@ def correlate_RDMs(rdv1, rdv2, score_type='pearson'):
         First flattened dissimilarity matrix. 
     rdv2 : array_like
         Second flattened dissimilarity matrix.
-    score_type : str
-        Type of association measure (defaults to pearson).
+    score_type : {'pearson', 'spearman'}, optional
+        Type of association measure to compute (defaults to `pearson`).
         
     Return
     ------
@@ -97,11 +97,11 @@ def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, score_typ
     activity_pattern_matrix_1 : ndarray
         First activity pattern matrix, where each column designates one
         condition and each row one measurement channel.
-    activity_pattern_matrix_2 :
+    activity_pattern_matrix_2 : ndarray
         First activity pattern matrix, where each column designates one
         condition and each row one measurement channel.
-    score_type : str
-        Type of association measure (defaults to pearson).
+    score_type : {'pearson', 'spearman'}, optional
+        Type of association measure to compute (defaults to `pearson`).
     
     Returns
     -------
@@ -126,8 +126,9 @@ def noise_ceiling(reference_rdms, correlation='pearson'):
         Several dissimilarity matrices based on which the noise ceilings shall
         be computed. The shape (n,n,m) is mandatory, where m denotes
         different matrices of shape (n,n).
-    correlation : str
-        The correlation coefficient which should be used to compute ceilings.
+    correlation : {'pearson', 'spearman'}, optional
+        The correlation coefficient which should be used to compute ceilings
+        (defaults to `pearson`).
         
     Returns
     -------
@@ -136,7 +137,7 @@ def noise_ceiling(reference_rdms, correlation='pearson'):
         
     Notes
     -----
-    This implementation is inspired by the MATLAB implementation used in [1]_.
+    This implementation is inspired by the MATLAB implementation presented in [1]_.
     
     References
     ----------

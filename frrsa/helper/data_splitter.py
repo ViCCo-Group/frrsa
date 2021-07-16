@@ -19,7 +19,7 @@ def data_splitter(choice, k, reps, random_state=None):
     reps : int
             How often the k-fold iterator is repeated.
     random_state: int, optional
-            State of the randomness for testing purposes (defaults to None).
+            State of the randomness for testing purposes (defaults to `None`).
     
     Returns
     -------

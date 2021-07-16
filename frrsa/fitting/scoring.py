@@ -17,9 +17,9 @@ def scoring_classical(y_unfitted: np.ndarray, x_unfitted: np.ndarray,
     
     Parameters
     ----------
-    y_unfitted : np.ndarray
+    y_unfitted : ndarray
         Vectorized target RDM(s) across all conditions.
-    x_unfitted : np.ndarray
+    x_unfitted : ndarray
         Vectorized predicting RDM across all conditions.
     score_type : str, optional
         Type of association measure to compute (defaults to pearson).
@@ -50,9 +50,9 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
     
     Parameters
     ----------
-    y_true : np.ndarray
+    y_true : ndarray
         Vectorized target RDM(s) for the test set.
-    y_pred : np.ndarray
+    y_pred : ndarray
         Vectorized reweighted predicting RDM(s) for the test set.
     score_type : str, optional
         Type of association measure to compute (defaults to pearson).
