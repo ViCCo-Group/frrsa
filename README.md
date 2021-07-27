@@ -41,8 +41,8 @@ At present, the algorithm expects data of two systems (e.g., a specific DNN laye
 As of now, only L2-regularization aka Ridge Regression.
 #### _You say ridge regression; which hyperparameter space should I check?_
 We implemented the L2-regularization using Fractional Ridge Regression (FRR; [Rokem & Kay, 2020](https://pubmed.ncbi.nlm.nih.gov/33252656/)). One advantage of FRR is that the hyperparameter to be optimized is the fraction between ordinary least squares and L2-regularized regression coefficients, which ranges between 0 and 1. Hence, FRR allows assessing the full range of possible regularization parameters. In the context of FRRSA, ten default values between 0.1 and 1 are set. If you want to specify custom regularization values that ought to be assessed, you are able to do so by inputting a list of candidate values into the frrsa algorithm.
-#### _What else? What outputs does the output give? Are there other options I can specify when running FR-RSA?_
-There are default values for all parameters, which we partly assessed (see our preprint). However, you input custom parameters as you wish.
+#### _What else? What objects does the function return? Are there other parameters I can specify when running FR-RSA?_
+There are default values for all parameters, which we partly assessed (see our preprint). However, you can input custom parameters as you wish. See the respective docstring for an explanation of all returned objects.
 
 
 ## Authors
