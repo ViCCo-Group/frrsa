@@ -486,7 +486,6 @@ def run_parallel(outer_run,
                  distance):
     '''Wraps the function `run_outer_cross_validation_batch` to run it in parallel.
     
-
     Parameters
     ----------
     outer_run : ndarray
@@ -522,8 +521,7 @@ def run_parallel(outer_run,
     Returns
     -------
     results : list
-        Holds all results of the parallelied calls of `run_outer_cross_validation_batch`.
-
+        Holds all results of the parallelied calls of `run_outer_cross_validation_batch`.s
     '''
     results = []
     for batch in outer_run:
