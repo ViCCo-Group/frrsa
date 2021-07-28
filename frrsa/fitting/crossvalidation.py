@@ -94,19 +94,19 @@ def frrsa(target,
         The predicted dissimilarities averaged across outer folds with shape
         (condition*condition*n_target).
     predictions : pd.DataFrame
-        Holds predicted and target dissimilarities and to which object pairs
-        they belong, for all folds and targets separately. This is a
-        potentially very large object. Only request if you really need it.
-        Data columns are as follows:
-        
-        =============   ======================================================
-        y_test          Classical RSA scores for test object pairs (as `float`)
-        y_regularized   FR-RSA scores for test object pairs (as `float`)
-        target          Target to which y's belong (as `int`)
-        fold            Fold to which y's belong (as `int`)
-        first_obj       First object of pair to which y's belong (as `int`)
-        second_obj      Second object of pair to which y's belong (as `int`)
-        =============   ======================================================
+        Holds dissimilarities for the target RDMs and for the predicting RDM
+        and to which object pairs they belong, for all folds and targets
+        separately. This is a potentially very large object. Only request if
+        you really need it. Data columns are as follows:
+
+        ================   ================================================================
+        dissim_target      Dissimilarity for the target RDMs' object pairs (as `float`)
+        dissim_predicted   Dissimilarity for the predicting RDM's  object pairs (as `float`)
+        target             Target to which dissim's belong (as `int`)
+        fold               Fold to which dissim's belong (as `int`)
+        first_obj          First object of pair to which dissim's belong (as `int`)
+        second_obj         Second object of pair to which dissim's belong (as `int`)
+        ================   ================================================================
         
     scores : pd.DataFrame
         Holds the scores, that is, the representational correspondence between
@@ -175,7 +175,7 @@ def frrsa(target,
     
     if predictions_wanted:
         predictions = pd.DataFrame(data=np.delete(predictions, 0, 0),
-                                   columns=['y_test', 'y_regularized', 'target', 'fold', 'first_obj', 'second_obj'])
+                                   columns=['dissim_target', 'dissim_predicted', 'target', 'fold', 'first_obj', 'second_obj'])
     else:
         predictions = None
         
@@ -261,8 +261,9 @@ def start_outer_cross_validation(n_conditions,
     Returns
     -------
     predictions : ndarray
-        Holds predicted and target dissimilarities and to which object pairs
-        they belong, for all folds and targets separately.
+        Holds dissimilarities for the target RDMs and for the predicting RDM
+        and to which object pairs they belong, for all folds and targets
+        separately.
     score : ndarray
         Holds the scores, that is, the representational correspondence between
         each target RDM and the predicting RDM, for classical and 
