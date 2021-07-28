@@ -23,8 +23,8 @@ def hadamard(predictor):
     '''
     r, c = np.triu_indices(predictor.shape[1], 1)
     hadamard_prod = np.einsum('ij,ik->ijk', predictor, predictor)[:, r, c]
-    n_columns = predictor.shape[1]
-    pairs = np.array(list((itertools.combinations(range(n_columns), 2))))
+    n_conditions = predictor.shape[1]
+    pairs = np.array(list((itertools.combinations(range(n_conditions), 2))))
     first_pair_members = pairs[:, 0]
     second_pair_members = pairs[:, 1]
     return hadamard_prod, first_pair_members, second_pair_members
