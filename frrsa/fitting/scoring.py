@@ -28,7 +28,6 @@ def scoring_classical(y_unfitted: np.ndarray, x_unfitted: np.ndarray,
     -------
     scores : ndarray
         Association scores.
-        
     '''
     n_targets = y_unfitted.shape[1]
     scores = np.empty(n_targets)
@@ -61,7 +60,6 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
     -------
     scores : ndarray
         Association scores.
-        
     '''
     n_targets = y_true.shape[1]
     if (y_pred.ndim == 2 and y_pred.shape[1] != 1 and n_targets == 1) or y_pred.ndim == 3:

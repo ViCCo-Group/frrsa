@@ -30,7 +30,6 @@ def count_outputs(y):
     -------
     amount : int
         The amount of separate target variables.
-    
     '''
     if y.ndim==2:
         return y.shape[1]
@@ -122,7 +121,6 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs):
     -------
     y_predicted : ndarray
         Predictions for all targets.
-    
     '''
     X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, 
                                                                  X_test, 
@@ -161,7 +159,6 @@ def final_model(X, y, fracs):
     -------
     beta_unstandardized : ndarray
         Weight for each target's measurement channel.
-    
     '''
     X = z_score.fit_transform(X)
     X_means = z_score.mean_.reshape(-1,1)

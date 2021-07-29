@@ -50,7 +50,6 @@ def flatten_RDM(rdm: np.ndarray) -> np.ndarray:
     -------
     rdv : ndarray
         The unique upper half of `rdm`.
-    
     '''
     if rdm.ndim==3:
         mapfunc = partial(squareform, checks=False)
@@ -77,7 +76,6 @@ def correlate_RDMs(rdv1, rdv2, score_type='pearson'):
         Correlation coefficient.
     p_value : float
         Two-tailed p-value.
-    
     '''
     if score_type == 'pearson':
         corr, p_value = pearsonr(rdv1, rdv2)

@@ -44,7 +44,7 @@ def frrsa(target,
           predictions_wanted=False,
           parallel=False,
           rng_state=None):    
-    '''Conduct repated, nested, cross-validated FRRRSA.
+    '''Conduct repeated, nested, cross-validated FRRRSA.
     
     This high-level wrapper function conducts some preparatory data processing,
     calls the function actually doing the work, and finally reorganizes output
@@ -214,9 +214,9 @@ def start_outer_cross_validation(n_conditions,
                                  parallel,
                                  predictions_wanted,
                                  distance):
-    '''Conduct repated, nested, cross-validated FRRRSA.
+    '''Conduct repeated, nested, cross-validated FRRRSA.
     
-    Set up and conduct repated, nested, cross-validated FRRRSA, either in
+    Set up and conduct repeated, nested, cross-validated FRRRSA, either in
     parallel or sequentially.
     
     Parameters
@@ -522,7 +522,7 @@ def run_parallel(outer_run,
     Returns
     -------
     results : list
-        Holds all results of the parallelied calls of `run_outer_cross_validation_batch`.s
+        Holds all results of the parallelized calls of `run_outer_cross_validation_batch`
     '''
     results = []
     for batch in outer_run:
