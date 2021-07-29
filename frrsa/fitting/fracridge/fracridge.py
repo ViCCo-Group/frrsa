@@ -5,19 +5,20 @@
 # part, is the sole work of A. Rokem K. Kay, see their paper "Fractional ridge 
 # regression: a fast, interpretable reparameterization of ridge regression" 
 # (2020) GigaScience, Volume 9, Issue 12, December 2020, 
-# https://doi.org/10.1093/gigascience/giaa133.
+# https://doi.org/10.1093/gigascience/giaa133. and the respective GitHub repo
+# https://github.com/nrdg/fracridge/tree/master/fracridge
 #     
 # The only changes I implemented are the following:
 #     - the function "fracridge" contains the argument "X_test" which
-#         defaults to None.
-#     - the function "fracridge" returns predictions directly.
+#         (defaults None).
+#     - the function "fracridge" can return predictions directly.
 #     - the function "fracridge" contains the argument "pred_wanted" to
-#         specify whether predictions shall be output at all.
+#         specify whether predictions shall be output at all (default True).
 #     - the function "fracridge" contains the argument "betas_wanted" to
-#         specify whether coefs shall be output at all.
+#         specify whether coefs shall be output at all (default False).
 #     - other functions defined in the original module were deleted, since they
 #         are not needed in the framework of my project FR-RSA.
-# Last updated: 27st of April 2021
+# Last updated: 29st of July 2021
 # =============================================================================
 
 import numpy as np
@@ -37,6 +38,7 @@ def _do_svd(X, y, jit=True):
     """
     if len(y.shape) == 1:
         y = y[:, np.newaxis]
+        
     # Per default, we'll try to use the jit-compiled SVD, which should be
     # more performant:
     use_scipy = False
@@ -60,7 +62,7 @@ def _do_svd(X, y, jit=True):
         uu, ss, v_t = svd(X.T @ X)
         selt = np.sqrt(ss)
         if y.shape[-1] >= X.shape[0]:
-            ynew = (1/selt) @ v_t @ X.T @ y
+            ynew = (np.diag(1./selt) @ v_t @ X.T) @ y
         else:
             ynew = np.diag(1./selt) @ v_t @ (X.T @ y)
 
@@ -70,6 +72,7 @@ def _do_svd(X, y, jit=True):
         ynew = uu.T @ y
 
     ols_coef = (ynew.T / selt).T
+    
     return selt, v_t, ols_coef
 
 
@@ -148,7 +151,7 @@ def fracridge(X, y, X_test=None, fracs=None, tol=1e-10, jit=True, betas_wanted=F
     isbad = selt < tol
     if np.any(isbad):
         warnings.warn("Some eigenvalues are being treated as 0")
-        print('Len of isbad is ' + str(len(isbad)))
+
     ols_coef[isbad, ...] = 0
 
     # Limits on the grid of candidate alphas used for interpolation:
@@ -210,4 +213,5 @@ def fracridge(X, y, X_test=None, fracs=None, tol=1e-10, jit=True, betas_wanted=F
           (pp, ff, bb)).squeeze()
     else:
         coef = None
+        
     return pred, coef, alphas
