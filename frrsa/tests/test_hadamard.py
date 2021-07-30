@@ -1,6 +1,6 @@
 import unittest
 
-from helper.predictor_distance import hadamard
+from frrsa.helper.predictor_distance import hadamard
 
 import numpy as np
 from numpy.testing import assert_allclose
