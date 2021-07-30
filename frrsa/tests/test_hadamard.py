@@ -5,8 +5,8 @@ from helper.predictor_distance import hadamard
 import numpy as np
 from numpy.testing import assert_allclose
 
-class HadamardTests(unittest.TestCase):
-    def test_hadamard(self):
+class TestHadamard(unittest.TestCase):
+    def test_small(self):
         predictor = np.array([[1,2,6], [3,4,5]])
         hadamard_prod, first_pair_idx, second_pair_idx = hadamard(predictor)
         expected_hadamard_prod = np.array([[2,6,12], [12,15,20]])
