@@ -183,6 +183,7 @@ def frrsa(target,
         predictions = None
         
     if betas_wanted:
+        #TODO: divide betas by p.
         idx = list(range(n_conditions)) # all conditions.
         X, *_ = compute_predictor_distance(predictor, idx, distance)
         fracs = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
@@ -192,13 +193,13 @@ def frrsa(target,
     else:
         betas = None
     
+    # Average reweighted scores across outer CVs. For this, the correlations 
+    # need to be Fisher's z-transformed and backtransformed after.
     reweighted_scores['score'] = reweighted_scores['score'].apply(np.arctanh)
     reweighted_scores = reweighted_scores.groupby(['target'])['score'].mean().reset_index()
+    reweighted_scores['score'] = reweighted_scores['score'].apply(np.tanh)
     reweighted_scores['RSA_kind'] = 'reweighted'
-    
     scores = pd.concat([classical_scores, reweighted_scores], axis=0)
-    
-    # Collapse the RDMs along the diagonal, sum & divide, and put pack in array.
     predicted_RDM_re = collapse_RDM(n_conditions, n_targets, predicted_RDM, predicted_RDM_counter)
     return predicted_RDM_re, predictions, scores, betas
 
