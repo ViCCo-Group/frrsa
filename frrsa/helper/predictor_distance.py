@@ -10,6 +10,32 @@ import itertools
 
 import numpy as np
 
+def check_predictor_data(predictor):
+    '''Check the predictor shape.
+    
+    Parameters
+    ----------
+    predictor : ndarray
+        A 2d data array
+    '''
+    if len(predictor.shape) < 2:
+        raise Exception('Predictor has to be a matrix') 
+    if predictor.shape[1] < 2:
+        raise Exception('Predictor needs at least 2 columns')
+
+def calculate_pair_indices(n_conditions):
+    '''Calculate the indices in the original predictor data of the first and second member of a pair.
+    
+    Parameters
+    ----------
+    n_conditions : int
+        Amount of conditions in the original predictor
+    '''
+    pairs = np.array(list((itertools.combinations(range(n_conditions), 2))))
+    first_pair_members = pairs[:, 0]
+    second_pair_members = pairs[:, 1]
+    return first_pair_members, second_pair_members
+
 def hadamard(predictor):
     '''Compute the Hadamard products for all column pairs.
     
@@ -22,13 +48,16 @@ def hadamard(predictor):
     -------
     hadamard_prod: ndarray
         Hadamard products for all column-pairs of `predictor`.
+    first_pair_members: ndarray
+        Index of the first element of the hadamard calculation
+    second_pair_members: ndarray
+        Index of the second element of the hadamard calculation
     '''
+    check_predictor_data(predictor)
     r, c = np.triu_indices(predictor.shape[1], 1)
     hadamard_prod = np.einsum('ij,ik->ijk', predictor, predictor)[:, r, c]
     n_conditions = predictor.shape[1]
-    pairs = np.array(list((itertools.combinations(range(n_conditions), 2))))
-    first_pair_members = pairs[:, 0]
-    second_pair_members = pairs[:, 1]
+    first_pair_members, second_pair_members = calculate_pair_indices(n_conditions)
     return hadamard_prod, first_pair_members, second_pair_members
 
 def euclidian(predictor, squared):
@@ -48,10 +77,14 @@ def euclidian(predictor, squared):
     -------
     X : ndarray
         Euclidian distance between all column-pairs for each row.
+    first_pair_members: ndarray
+        Index of the first element of the hadamard calculation
+    second_pair_members: ndarray
+        Index of the second element of the hadamard calculation
     '''
-    #TODO: needs to return first_pair_members, second_pair_members as well, until then not functional!
     #TODO: in higher-order package "crossvalidation" in line 224, adapt scaling if needed.
     #TODO: in higher-order package "crossvalidation" add parameters to choose one of the predictor_distance funcs.
+    check_predictor_data(predictor)
     n_conditions = predictor.shape[1]
     n_pairs = n_conditions*(n_conditions-1)//2
     idx = np.concatenate(([0], np.arange(n_conditions-1,0,-1).cumsum()))
@@ -59,8 +92,10 @@ def euclidian(predictor, squared):
     X = np.empty((predictor.shape[0], n_pairs), dtype=predictor.dtype)
     for j,i in enumerate(range(n_conditions-1)):
         X[:, start[j]:stop[j]] = predictor[:,i,None] - predictor[:,i+1:]
+    
     if squared:
         np.square(X, out=X)
     else:
         np.absolute(X, out=X)
-    return X
+    first_pair_members, second_pair_members = calculate_pair_indices(n_conditions)
+    return X, first_pair_members, second_pair_members
