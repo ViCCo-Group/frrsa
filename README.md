@@ -53,7 +53,7 @@ There are default values for all parameters, which we partly assessed (see our p
 
 
 ## Citation
-If you use this `frrsa` (or any modules associated with it), please cite our [associated preprint](https://www.biorxiv.org/content/10.1101/2021.09.27.462005v1) as follows:
+If you use `frrsa` (or any of its modules), please cite our [associated preprint](https://www.biorxiv.org/content/10.1101/2021.09.27.462005v1) as follows:
 
 ```
 @article {Kaniuth_preprint_2021,
