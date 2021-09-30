@@ -52,8 +52,23 @@ There are default values for all parameters, which we partly assessed (see our p
 - **Martin Hebart** - [Personal Homepage](http://martin-hebart.de/), [MPI CBS](https://www.cbs.mpg.de/employees/hebart)
 
 
+## Citation
+If you use this `frrsa` (or any modules associated with it), please cite our [associated preprint](https://www.biorxiv.org/content/10.1101/2021.09.27.462005v1) as follows:
+
+```
+@article {Kaniuth_preprint_2021,
+          author = {Kaniuth, Philipp and Hebart, Martin N.},
+          title = {Feature-reweighted RSA: A method for improving the fit between computational models, brains, and behavior},
+          journal = {bioRxiv},
+          pages = {2021.09.27.462005},
+          year = {2021},
+          doi = {10.1101/2021.09.27.462005},
+          URL = {https://www.biorxiv.org/content/early/2021/09/28/2021.09.27.462005},
+}
+```
+
 ## License
-This project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 - see the [LICENSE.md](LICENSE.md) file for details.
+This GitHub repository is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 - see the [LICENSE.md](LICENSE.md) file for details.
 
 
 ## Acknowledgments
