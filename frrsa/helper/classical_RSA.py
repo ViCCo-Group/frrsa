@@ -85,37 +85,6 @@ def correlate_RDMs(rdv1, rdv2, score_type='pearson'):
         corr, p_value = spearmanr(rdv1, rdv2)
     return corr, p_value
 
-def complete_RSA(activity_pattern_matrix_1, activity_pattern_matrix_2, score_type='pearson'):
-    #TODO: implement multiple matrices.
-    '''Conduct complete classical RSA.
-    
-    Computes and flattens RDMs for two activity pattern matrices and
-    correlates them.
-    
-    Parameters
-    ----------
-    activity_pattern_matrix_1 : ndarray
-        First activity pattern matrix, where each column designates one
-        condition and each row one measurement channel.
-    activity_pattern_matrix_2 : ndarray
-        First activity pattern matrix, where each column designates one
-        condition and each row one measurement channel.
-    score_type : {'pearson', 'spearman'}, optional
-        Type of association measure to compute (defaults to `pearson`).
-    
-    Returns
-    -------
-    corr : float
-        Correlation coefficient.
-    p_value : float
-        Two-tailed p-value.
-    '''
-    rdm1 = make_RDM(activity_pattern_matrix_1)
-    rdm2 = make_RDM(activity_pattern_matrix_2)
-    rdv1 = flatten_RDM(rdm1)
-    rdv2 = flatten_RDM(rdm2)
-    corr, p_value = correlate_RDMs(rdv1, rdv2, score_type)
-    return corr, p_value
 
 def noise_ceiling(reference_rdms, correlation='pearson'):
     '''Compute noise ceilings for represntational similarity analysis.
