@@ -47,6 +47,18 @@ We implemented the L2-regularization using Fractional Ridge Regression (FRR; [Ro
 There are default values for all parameters, which we partly assessed (see our preprint). However, you can input custom parameters as you wish. See the respective docstring for an explanation of all returned objects.
 
 
+## Known issues
+Note that the data (i.e. `target` and `predictor`) are split along the condition dimension to conduct a nested cross-validation. Therefore, there exists a logical lower bound regarding the number of different conditions, _k_, below which `frrsa` cannot be executed succesfully. Below this bound, inner test folds occur that contain data from just two conditions, which leads to just one predicted dissimilaritiy (for one condition pair). However, to determine the goodness-of-fit, the predicted dissimilarites are _correlated_ with the target dissimilarities. This does not work with vectors that have a length < 2.
+
+The exact lower bound depends on the values set for `outer_k` and `splitter`. 
+
+If `outer_k=5` and `splitter='random'` (the default values for these parameters), the lower sufficient size of _k_ is 14. This is due to the inner workings of [data_splitter](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/helper/data_splitter.py). If `splitter='random'`, `data_splitter` uses [klearn.model_selection.ShuffleSplit](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.ShuffleSplit.html) which allows to specifically set the proportion of the dataset to be included in the test split. Currently, in `data_splitter` this is set to _1/outer_k_ in order to be comparable to `splitter='kfold'`. Therefore, when _k_ is 14, this leads to an outer test fold size of 2.8 ≈ 3, and to an outer training fold size of (14-3)=11. This in turn guarantees an inner test fold size of 2.2 ≈ 3 (note that the scipy function in question rounds up). However, if _k_ is 13, 2.6 ≈ 3 conditions are allocated to an outer test split, which leads to an outer training fold size of (13-3)=10. This leads to inner test folds sizes of 2.
+
+If `outer_k=5` and `splitter='kfold'`, the lower sufficient size of _k_ is 19. If `splitter='kfold'`, `data_splitter` uses [klearn.model_selection.RepeatedKFold](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RepeatedKFold.html) which does not allow to specifically set the size of the test fold. Therefore, when _k_ is 19, at least data of 15 conditions enter the inner cross-validation, which leads to inner test folds with 3 conditions. However, if _k_ is 18, only data of 14 conditions enter the inner cross-validation, which leads to some inner test folds with only 2 conditions.
+
+With different values for `outer_k` the lower bound of _k_ changes accordingly. An automatic check of the parameters and are custom warning a work in progress see [#17](/../../issues/17).
+
+
 ## Authors
 - **Philipp Kaniuth** - [GitHub](https://github.com/PhilippKaniuth), [MPI CBS](https://www.cbs.mpg.de/employees/kaniuth)
 - **Martin Hebart** - [Personal Homepage](http://martin-hebart.de/), [MPI CBS](https://www.cbs.mpg.de/employees/hebart)
