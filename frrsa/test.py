@@ -21,8 +21,8 @@ predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 #%% Call the main funtion.
 distance = 'pearson'
-outer_k = 2
-outer_reps = 3
+outer_k = 5
+outer_reps = 1
 splitter = 'random'
 hyperparams = None
 score_type = 'pearson'
