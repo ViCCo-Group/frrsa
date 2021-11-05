@@ -70,12 +70,12 @@ If you use `frrsa` (or any of its modules), please cite our [associated preprint
 ```
 @article{Kaniuth_preprint_2021,
         author = {Kaniuth, Philipp and Hebart, Martin N.},
-        title = {Feature-reweighted RSA: A method for improving the fit between computational models, brains, and behavior},
+        title = {Feature-reweighted representational similarity analysis: A method for improving the fit between computational models, brains, and behavior},
         journal = {bioRxiv},
         pages = {2021.09.27.462005},
         year = {2021},
         doi = {10.1101/2021.09.27.462005},
-        URL = {https://www.biorxiv.org/content/early/2021/09/28/2021.09.27.462005}
+        URL = {https://www.biorxiv.org/content/10.1101/2021.09.27.462005v2}
 }
 ```
 
