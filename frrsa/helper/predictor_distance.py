@@ -16,7 +16,7 @@ def check_predictor_data(predictor):
     Parameters
     ----------
     predictor : ndarray
-        A 2d data array
+        A 2d data array.
     '''
     if len(predictor.shape) < 2:
         raise Exception('Predictor has to be a matrix') 
@@ -29,7 +29,7 @@ def calculate_pair_indices(n_conditions):
     Parameters
     ----------
     n_conditions : int
-        Amount of conditions in the original predictor
+        Amount of conditions in the original predictor.
     '''
     pairs = np.array(list((itertools.combinations(range(n_conditions), 2))))
     first_pair_members = pairs[:, 0]
@@ -49,9 +49,9 @@ def hadamard(predictor):
     hadamard_prod: ndarray
         Hadamard products for all column-pairs of `predictor`.
     first_pair_members: ndarray
-        Index of the first element of the hadamard calculation
+        Index of the first element of the hadamard calculation.
     second_pair_members: ndarray
-        Index of the second element of the hadamard calculation
+        Index of the second element of the hadamard calculation.
     '''
     check_predictor_data(predictor)
     r, c = np.triu_indices(predictor.shape[1], 1)
@@ -60,30 +60,24 @@ def hadamard(predictor):
     first_pair_members, second_pair_members = calculate_pair_indices(n_conditions)
     return hadamard_prod, first_pair_members, second_pair_members
 
-def euclidian(predictor, squared):
-    '''Compute element-wise euclidian distance of all pairs of columns
-    
-    Compute the euclidian distance of each column-pair, separately for each 
-    row. Either use squared or standard euclidian distance.
+def euclidean_squared(predictor):
+    '''Compute element-wise squared euclidean distance of all pairs of columns.
     
     Parameters
     ----------
     predictor : ndarray
         A 2d data array
-    squared : bool
-        Indicates whether to use standard or squared Euclidian distance.
     
     Returns
     -------
     X : ndarray
-        Euclidian distance between all column-pairs for each row.
+        Squared euclidean distance between all column-pairs for each row.
     first_pair_members: ndarray
-        Index of the first element of the hadamard calculation
+        Index of the first element of the hadamard calculation.
     second_pair_members: ndarray
-        Index of the second element of the hadamard calculation
+        Index of the second element of the hadamard calculation.
     '''
     #TODO: in higher-order package "crossvalidation" in line 224, adapt scaling if needed.
-    #TODO: in higher-order package "crossvalidation" add parameters to choose one of the predictor_distance funcs.
     check_predictor_data(predictor)
     n_conditions = predictor.shape[1]
     n_pairs = n_conditions*(n_conditions-1)//2
@@ -92,10 +86,6 @@ def euclidian(predictor, squared):
     X = np.empty((predictor.shape[0], n_pairs), dtype=predictor.dtype)
     for j,i in enumerate(range(n_conditions-1)):
         X[:, start[j]:stop[j]] = predictor[:,i,None] - predictor[:,i+1:]
-    
-    if squared:
-        np.square(X, out=X)
-    else:
-        np.absolute(X, out=X)
+    np.square(X, out=X)
     first_pair_members, second_pair_members = calculate_pair_indices(n_conditions)
     return X, first_pair_members, second_pair_members

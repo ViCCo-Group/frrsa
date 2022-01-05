@@ -22,14 +22,14 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
     print('within submodule')
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
-    from helper.predictor_distance import hadamard
+    from helper.predictor_distance import hadamard, euclidean_squared
     from fitting.scoring import scoring, scoring_classical
     from fitting.fitting import regularized_model, find_hyperparameters, final_model
 else:
     print('outside submodule')
     from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
-    from frrsa.frrsa.helper.predictor_distance import hadamard
+    from frrsa.frrsa.helper.predictor_distance import hadamard, euclidean_squared
     from frrsa.frrsa.fitting.scoring import scoring, scoring_classical
     from frrsa.frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
 
@@ -37,7 +37,7 @@ z_scale = StandardScaler(copy=False, with_mean=True, with_std=True)
 #%%
 def frrsa(target,
           predictor,
-          distance,
+          distance='pearson',
           outer_k=5,
           outer_reps=10,
           splitter='random',
@@ -63,8 +63,10 @@ def frrsa(target,
     predictor : ndarray
         The RDM that shall be used as a predictor. Expected shape is
         (channel*condition).
-    distance : str, optional
-        The distance measure used for the predictor RDM (defaults to pearson).
+    distance : {'pearson','euclidean_squared'}, optional
+        The distance measure used for the predictor RDM (defaults to `pearson`).
+        Note that the same distance measure for the predictor RDM is used when
+        applying classical and feature-reweighted RSA.
     outer_k : int, optional
         The fold size of the outer crossvalidation (defaults to 5).
     outer_reps : int, optional
@@ -140,7 +142,7 @@ def frrsa(target,
         n_targets = 1
 
     y_classical = flatten_RDM(target)
-    x_classical = flatten_RDM(make_RDM(predictor, distance='pearson'))
+    x_classical = flatten_RDM(make_RDM(predictor, distance))
  
     classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
     classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
@@ -150,8 +152,8 @@ def frrsa(target,
     n_outer_cvs = outer_k * outer_reps
     
     #TODO: possibly condition scaling on which "distance" is used; if
-    #hadamard z-transform. If euclidian, normalizing might be more suitable.
-    #Possibly adapt naming of function input in predictor_distance.euclidian
+    #hadamard z-transform. If euclidean, normalizing might be more suitable.
+    #Possibly adapt naming of function input in predictor_distance.euclidean
     #accordingly.
     predictor = z_scale.fit_transform(predictor)
     
@@ -677,38 +679,6 @@ def collapse_RDM(n_conditions,
     return predicted_RDM_re
 
 #%%
-def compute_predictor_distance(predictor,
-                               idx,
-                               distance):
-    '''Compute feature-specific distances for the predictor.
-
-    Parameters
-    ----------
-    predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
-        (channel*condition).
-    idx : array_like
-        Holds indices of conditions for feature-specific distancse shall be computed.
-    distance : str
-        The distance measure used for the predictor RDM.
-
-    Returns
-    -------
-    X : ndarray
-        The feature-specific distances for `predictor`.
-    first_pair_idx : ndarray
-        The first objects making up the object pairs to which dissimilarities
-        are available.
-    second_pair_idx : ndarray
-        The second objects making up the object pairs to which dissimilarities
-        are available.
-    '''
-    if distance=='pearson':
-        X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])
-        X = X.transpose()
-    return X, first_pair_idx, second_pair_idx
-
-#%%
 def fit_and_score(predictor,
                   target,
                   train_idx,
@@ -768,3 +738,37 @@ def fit_and_score(predictor,
         y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams)
     score = scoring(y_test, y_pred, score_type=score_type)
     return score, first_pair_idx, second_pair_idx, y_pred, y_test
+
+#%%
+def compute_predictor_distance(predictor,
+                               idx,
+                               distance):
+    '''Compute feature-specific distances for the predictor.
+
+    Parameters
+    ----------
+    predictor : ndarray
+        The RDM that shall be used as a predictor. Expected shape is
+        (channel*condition).
+    idx : array_like
+        Holds indices of conditions for feature-specific distancse shall be computed.
+    distance : str
+        The distance measure used for the predictor RDM.
+
+    Returns
+    -------
+    X : ndarray
+        The feature-specific distances for `predictor`.
+    first_pair_idx : ndarray
+        The first objects making up the object pairs to which dissimilarities
+        are available.
+    second_pair_idx : ndarray
+        The second objects making up the object pairs to which dissimilarities
+        are available.
+    '''
+    if distance=='pearson':
+        X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])
+    elif distance=='euclidean_squared':
+        X, first_pair_idx, second_pair_idx = euclidean_squared(predictor[:, idx])
+    X = X.transpose()
+    return X, first_pair_idx, second_pair_idx

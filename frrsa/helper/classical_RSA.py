@@ -11,10 +11,10 @@ import numpy as np
 from scipy.stats import spearmanr, pearsonr
 from functools import partial
 from scipy.spatial.distance import squareform
+from scipy.spatial.distance import pdist
 
 def make_RDM(activity_pattern_matrix, distance='pearson'):
     #TODO: implement for multiple matrices.
-    #TODO: implement other distance norms 
     '''Compute dissimilarity matrix.
     
     Parameters
@@ -22,8 +22,8 @@ def make_RDM(activity_pattern_matrix, distance='pearson'):
     activity_pattern_matrix : ndarray
         Matrix which holds activity patterns for several conditions. Each
         column is one condition, each row one measurement channel.
-    distance : str
-        The desired distance measure.
+    distance : {'pearson','euclidean_squared'}, optional
+        The desired distance measure (defaults to `pearson`).
         
     Returns
     -------
@@ -33,8 +33,8 @@ def make_RDM(activity_pattern_matrix, distance='pearson'):
     '''
     if distance=='pearson':
         rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
-    # elif distance=='Euclidian':
-    #     rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
+    elif distance=='euclidean_squared':
+        rdm = squareform(pdist(activity_pattern_matrix.T, 'sqeuclidean'))
     return rdm
 
 def flatten_RDM(rdm: np.ndarray) -> np.ndarray:
