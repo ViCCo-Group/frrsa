@@ -23,6 +23,7 @@ from fitting.crossvalidation import frrsa
 
 predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   predictor, 
+                                                  preprocess,
                                                   distance='pearson',
                                                   outer_k=5, 
                                                   outer_reps=10, 

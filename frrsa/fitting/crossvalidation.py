@@ -10,8 +10,9 @@ Representational Similarity Analysis.
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 import psutil
+
+from sklearn.preprocessing import StandardScaler, normalize
 from joblib import Parallel, delayed
 
 #TODO: remove the following imports and conditionals before publicising repo.
@@ -37,6 +38,7 @@ z_scale = StandardScaler(copy=False, with_mean=True, with_std=True)
 #%%
 def frrsa(target,
           predictor,
+          preprocess,
           distance='pearson',
           outer_k=5,
           outer_reps=10,
@@ -63,6 +65,11 @@ def frrsa(target,
     predictor : ndarray
         The RDM that shall be used as a predictor. Expected shape is
         (channel*condition).
+    preprocess : bool
+        Indication of whether to initially preprocess the condition patterns
+        of `predictor`. If `distance` is set to `pearson`, this amounts to
+        z-transforming each condition pattern. If `distance` is set to
+        `euclidean_squared`, this amounts to normalizing each condition pattern.
     distance : {'pearson','euclidean_squared'}, optional
         The distance measure used for the predictor RDM (defaults to `pearson`).
         Note that the same distance measure for the predictor RDM is used when
@@ -141,6 +148,12 @@ def frrsa(target,
     except IndexError:
         n_targets = 1
 
+    if preprocess:
+        if distance=='pearson':
+            predictor = z_scale.fit_transform(predictor)
+        elif distance=='euclidean_squared':
+            predictor = normalize(predictor,norm='l2',axis=0,copy=True,return_norm=False)
+
     y_classical = flatten_RDM(target)
     x_classical = flatten_RDM(make_RDM(predictor, distance))
  
@@ -148,14 +161,8 @@ def frrsa(target,
     classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
     classical_scores['target'] = list(range(n_targets))
     classical_scores['RSA_kind'] = 'classical'
-    
+
     n_outer_cvs = outer_k * outer_reps
-    
-    #TODO: possibly condition scaling on which "distance" is used; if
-    #hadamard z-transform. If euclidean, normalizing might be more suitable.
-    #Possibly adapt naming of function input in predictor_distance.euclidean
-    #accordingly.
-    predictor = z_scale.fit_transform(predictor)
     
     predictions, score, fold, hyperparameter, predicted_RDM, \
         predicted_RDM_counter = start_outer_cross_validation(n_conditions, 
@@ -185,8 +192,7 @@ def frrsa(target,
         predictions = None
         
     if betas_wanted:
-        #TODO: divide betas by p.
-        idx = list(range(n_conditions)) # all conditions.
+        idx = list(range(n_conditions))
         X, *_ = compute_predictor_distance(predictor, idx, distance)
         fracs = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
         betas = final_model(X, y_classical, fracs)
