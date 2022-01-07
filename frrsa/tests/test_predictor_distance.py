@@ -1,6 +1,6 @@
 import unittest
 
-from frrsa.helper.predictor_distance import hadamard, euclidean_squared, check_predictor_data, calculate_pair_indices
+from frrsa.helper.predictor_distance import hadamard, sqeuclidean, check_predictor_data, calculate_pair_indices
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -32,7 +32,7 @@ class TestEuclidian(unittest.TestCase):
     def test_small_squared(self):
         predictor = np.array([[6,3,2], [3,5,3]])
         expected_distance = np.array([[9,16,1], [4,0,4]])
-        distance, first_pair_idx, second_pair_idx = euclidean_squared(predictor)
+        distance, first_pair_idx, second_pair_idx = sqeuclidean(predictor)
         expected_first_pair_idx = np.array([0,0,1])
         expected_second_pair_idx = np.array([1,2,2])
         assert_allclose(expected_distance, distance)
@@ -42,17 +42,17 @@ class TestEuclidian(unittest.TestCase):
     def test_empty(self):
         predictor = np.array([])
         with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
-            distance, first_pair_idx, second_pair_idx = euclidean_squared(predictor)
+            distance, first_pair_idx, second_pair_idx = sqeuclidean(predictor)
 
     def test_not_enough_columns(self):
         predictor = np.array([[1], [2]])
         with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns'):
-            distance, first_pair_idx, second_pair_idx = euclidean_squared(predictor)
+            distance, first_pair_idx, second_pair_idx = sqeuclidean(predictor)
 
     def test_no_matrix(self):
         predictor = np.array([1])
         with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
-            distance, first_pair_idx, second_pair_idx = euclidean_squared(predictor)
+            distance, first_pair_idx, second_pair_idx = sqeuclidean(predictor)
 
 class TestPredictorCheck(unittest.TestCase):
     def test_no_matrix(self):
