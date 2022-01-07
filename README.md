@@ -21,6 +21,10 @@ Just import the main function and call it.
 ```py
 from fitting.crossvalidation import frrsa
 
+# load your "target" RDM
+# load your "predictor" data.
+# set the "preprocess" flag.
+
 predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   predictor, 
                                                   preprocess,
