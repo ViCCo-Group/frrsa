@@ -60,7 +60,7 @@ def hadamard(predictor):
     first_pair_members, second_pair_members = calculate_pair_indices(n_conditions)
     return hadamard_prod, first_pair_members, second_pair_members
 
-def euclidean_squared(predictor):
+def sqeuclidean(predictor):
     '''Compute element-wise squared euclidean distance of all pairs of columns.
     
     Parameters

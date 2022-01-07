@@ -21,7 +21,7 @@ predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 #%% Call the main funtion.
 preprocess = False
-distance = 'euclidean_squared'
+distance = 'sqeuclidean'
 outer_k = 5
 outer_reps = 1
 splitter = 'random'

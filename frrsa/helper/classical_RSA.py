@@ -22,7 +22,7 @@ def make_RDM(activity_pattern_matrix, distance='pearson'):
     activity_pattern_matrix : ndarray
         Matrix which holds activity patterns for several conditions. Each
         column is one condition, each row one measurement channel.
-    distance : {'pearson','euclidean_squared'}, optional
+    distance : {'pearson','sqeuclidean'}, optional
         The desired distance measure (defaults to `pearson`).
         
     Returns
@@ -33,7 +33,7 @@ def make_RDM(activity_pattern_matrix, distance='pearson'):
     '''
     if distance=='pearson':
         rdm = 1 - np.corrcoef(activity_pattern_matrix, rowvar=False)
-    elif distance=='euclidean_squared':
+    elif distance=='sqeuclidean':
         rdm = squareform(pdist(activity_pattern_matrix.T, 'sqeuclidean'))
     return rdm
 

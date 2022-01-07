@@ -23,14 +23,14 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
     print('within submodule')
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
-    from helper.predictor_distance import hadamard, euclidean_squared
+    from helper.predictor_distance import hadamard, sqeuclidean
     from fitting.scoring import scoring, scoring_classical
     from fitting.fitting import regularized_model, find_hyperparameters, final_model
 else:
     print('outside submodule')
     from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
-    from frrsa.frrsa.helper.predictor_distance import hadamard, euclidean_squared
+    from frrsa.frrsa.helper.predictor_distance import hadamard, sqeuclidean
     from frrsa.frrsa.fitting.scoring import scoring, scoring_classical
     from frrsa.frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
 
@@ -69,8 +69,8 @@ def frrsa(target,
         Indication of whether to initially preprocess the condition patterns
         of `predictor`. If `distance` is set to `pearson`, this amounts to
         z-transforming each condition pattern. If `distance` is set to
-        `euclidean_squared`, this amounts to normalizing each condition pattern.
-    distance : {'pearson','euclidean_squared'}, optional
+        `sqeuclidean`, this amounts to normalizing each condition pattern.
+    distance : {'pearson','sqeuclidean'}, optional
         The distance measure used for the predictor RDM (defaults to `pearson`).
         Note that the same distance measure for the predictor RDM is used when
         applying classical and feature-reweighted RSA.
@@ -151,7 +151,7 @@ def frrsa(target,
     if preprocess:
         if distance=='pearson':
             predictor = z_scale.fit_transform(predictor)
-        elif distance=='euclidean_squared':
+        elif distance=='sqeuclidean':
             predictor = normalize(predictor,norm='l2',axis=0,copy=True,return_norm=False)
 
     y_classical = flatten_RDM(target)
@@ -774,7 +774,7 @@ def compute_predictor_distance(predictor,
     '''
     if distance=='pearson':
         X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])
-    elif distance=='euclidean_squared':
-        X, first_pair_idx, second_pair_idx = euclidean_squared(predictor[:, idx])
+    elif distance=='sqeuclidean':
+        X, first_pair_idx, second_pair_idx = sqeuclidean(predictor[:, idx])
     X = X.transpose()
     return X, first_pair_idx, second_pair_idx
