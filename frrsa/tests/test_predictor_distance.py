@@ -28,7 +28,7 @@ class TestHadamard(unittest.TestCase):
         with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
             hadamard_prod, first_pair_idx, second_pair_idx = hadamard(np.array([1]))
 
-class TestEuclidian(unittest.TestCase):
+class TestSqeuclidean(unittest.TestCase):
     def test_small_squared(self):
         predictor = np.array([[6,3,2], [3,5,3]])
         expected_distance = np.array([[9,16,1], [4,0,4]])
@@ -68,7 +68,8 @@ class TestPredictorCheck(unittest.TestCase):
 class TestIndicesCalculation(unittest.TestCase):
     def test_calcualtion(self):
         predictor = np.array([[1,2,6], [3,4,5]])
-        first_pair_idx, second_pair_idx = calculate_pair_indices(3)
+        n_conditions = predictor.shape[1]
+        first_pair_idx, second_pair_idx = calculate_pair_indices(n_conditions)
         expected_first_pair_idx = np.array([0,0,1])
         expected_second_pair_idx = np.array([1,2,2])
         assert_allclose(first_pair_idx, expected_first_pair_idx)
