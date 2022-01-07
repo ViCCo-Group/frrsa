@@ -20,19 +20,21 @@ predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 
 #%% Call the main funtion.
-distance = 'pearson'
+preprocess = False
+distance = 'euclidean_squared'
 outer_k = 5
 outer_reps = 1
 splitter = 'random'
 hyperparams = None
 score_type = 'pearson'
 betas_wanted = True
-predictions_wanted=True
+predictions_wanted = True
 parallel = True
 rng_state = 1
 
 predicted_RDM, predictions, scores, betas = frrsa(target,
                                                  predictor, 
+                                                 preprocess,
                                                  distance,
                                                  outer_k, 
                                                  outer_reps, 
