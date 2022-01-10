@@ -39,6 +39,7 @@ z_scale = StandardScaler(copy=False, with_mean=True, with_std=True)
 def frrsa(target,
           predictor,
           preprocess,
+          nonnegative,
           distance='pearson',
           outer_k=5,
           outer_reps=10,
@@ -70,6 +71,8 @@ def frrsa(target,
         of `predictor`. If `distance` is set to `pearson`, this amounts to
         z-transforming each condition pattern. If `distance` is set to
         `sqeuclidean`, this amounts to normalizing each condition pattern.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
     distance : {'pearson','sqeuclidean'}, optional
         The distance measure used for the predictor RDM (defaults to `pearson`).
         Note that the same distance measure for the predictor RDM is used when
@@ -178,7 +181,8 @@ def frrsa(target,
                                                              n_outer_cvs, 
                                                              parallel,
                                                              predictions_wanted,
-                                                             distance)
+                                                             distance,
+                                                             nonnegative)
 
     # 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
@@ -195,7 +199,7 @@ def frrsa(target,
         idx = list(range(n_conditions))
         X, *_ = compute_predictor_distance(predictor, idx, distance)
         fracs = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
-        betas = final_model(X, y_classical, fracs)
+        betas = final_model(X, y_classical, fracs, nonnegative, rng_state)
         betas = pd.DataFrame(data=betas,
                              columns=['betas_target_{0}'.format(i+1) for i in range(n_targets)])
     else:
@@ -225,7 +229,8 @@ def start_outer_cross_validation(n_conditions,
                                  n_outer_cvs,
                                  parallel,
                                  predictions_wanted,
-                                 distance):
+                                 distance,
+                                 nonnegative):
     '''Conduct repeated, nested, cross-validated FRRRSA.
     
     Set up and conduct repeated, nested, cross-validated FRRRSA, either in
@@ -269,6 +274,8 @@ def start_outer_cross_validation(n_conditions,
         cross-validations shall be returned.
     distance : str
         The distance measure used for the predictor RDM.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
@@ -329,7 +336,8 @@ def start_outer_cross_validation(n_conditions,
                                                                                        predictor, 
                                                                                        target, 
                                                                                        predictions_wanted, 
-                                                                                       distance) for outer_run in np.array_split(outer_runs, number_cores)) 
+                                                                                       distance,
+                                                                                       nonnegative) for outer_run in np.array_split(outer_runs, number_cores)) 
         for job in jobs:
             results += job
     else:
@@ -347,7 +355,8 @@ def start_outer_cross_validation(n_conditions,
                                                                                 predictor,
                                                                                 target,
                                                                                 predictions_wanted, 
-                                                                                distance)
+                                                                                distance,
+                                                                                nonnegative)
             results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, 
                             regularized_score, best_hyperparam, outer_loop_count])
 
@@ -382,7 +391,8 @@ def run_outer_cross_validation_batch(splitter,
                                      predictor,
                                      target,
                                      predictions_wanted,
-                                     distance):
+                                     distance,
+                                     nonnegative):
     '''Conduct one outer cross-validated FRRRSA run.
     
     For one outer cross-validation, all hyperparameters are evaluated in an 
@@ -422,6 +432,8 @@ def run_outer_cross_validation_batch(splitter,
         cross-validations shall be returned.
     distance : str
         The distance measure used for the predictor RDM.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
         
     Returns
     -------
@@ -450,11 +462,12 @@ def run_outer_cross_validation_batch(splitter,
                                                             target, 
                                                             score_type, 
                                                             hyperparams,
-                                                            distance)
+                                                            distance,
+                                                            nonnegative)
     
     best_hyperparam = evaluate_hyperparams(inner_hyperparams_scores, 
                                            hyperparams)
-        
+    place='out'
     regularized_score, first_pair_idx, second_pair_idx, \
         y_regularized, y_test = fit_and_score(predictor, 
                                              target,
@@ -463,7 +476,9 @@ def run_outer_cross_validation_batch(splitter,
                                              score_type, 
                                              best_hyperparam,
                                              distance,
-                                             place='out')
+                                             place,
+                                             nonnegative,
+                                             rng_state)
  
     first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
                                       outer_test_indices[second_pair_idx]
@@ -496,7 +511,8 @@ def run_parallel(outer_run,
                  predictor,
                  target,
                  predictions_wanted,
-                 distance):
+                 distance,
+                 nonnegative):
     '''Wraps the function `run_outer_cross_validation_batch` to run it in parallel.
     
     Parameters
@@ -530,6 +546,8 @@ def run_parallel(outer_run,
         cross-validations shall be returned.
     distance : str
         The distance measure used for the predictor RDM.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
@@ -553,7 +571,8 @@ def run_parallel(outer_run,
                                                                             predictor, 
                                                                             target,
                                                                             predictions_wanted,
-                                                                            distance)
+                                                                            distance,
+                                                                            nonnegative)
         results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score, 
                         best_hyperparam, outer_loop_count])
     return results
@@ -567,7 +586,8 @@ def start_inner_cross_validation(splitter,
                                  target,
                                  score_type,
                                  hyperparams,
-                                 distance):
+                                 distance,
+                                 nonnegative):
     '''Conduct inner repated cross-validated FRRRSA.
 
     Conduct inner repated cross-validated FRRRSA to evaluate all possible
@@ -599,6 +619,8 @@ def start_inner_cross_validation(splitter,
         The hyperparameter candidates to evaluate in the regularization scheme.
     distance : str
         The distance measure used for the predictor RDM.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
@@ -612,10 +634,11 @@ def start_inner_cross_validation(splitter,
     inner_hyperparams_scores = np.empty((n_hyperparams, n_targets, (inner_k * inner_reps)))
     # Note: In the following loop, rkf.split is applied to the outer_train_indices!
     inner_loop_count = -1
+    place='in'
     for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
         inner_loop_count += 1
         train_idx, test_idx = outer_train_indices[inner_train_indices], outer_train_indices[inner_test_indices]
-        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, distance, place='in')
+        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, distance, place, nonnegative, rng_state)
         inner_hyperparams_scores[:, :, inner_loop_count] = score_in
     return inner_hyperparams_scores
 
@@ -692,7 +715,9 @@ def fit_and_score(predictor,
                   score_type,
                   hyperparams,
                   distance,
-                  place):
+                  place,
+                  nonnegative,
+                  rng_state):
     '''Fit regularized regression and get its predictions and scores.
 
     Parameters
@@ -717,6 +742,11 @@ def fit_and_score(predictor,
         The distance measure used for the predictor RDM.
     place : str
         Indication of whether this function is applied in inner our outer crossvalidation.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
+    rng_state : int
+        State of the randomness in the system. Should only
+        be set for testing purposes, will be deprecated in release-version.   
 
     Returns
     -------
@@ -739,9 +769,9 @@ def fit_and_score(predictor,
     y_train = flatten_RDM(target[np.ix_(train_idx, train_idx)])
     y_test = flatten_RDM(target[np.ix_(test_idx, test_idx)])
     if place=='in':
-        y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams)
+        y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng_state)
     elif place=='out':
-        y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams)
+        y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, rng_state)
     score = scoring(y_test, y_pred, score_type=score_type)
     return score, first_pair_idx, second_pair_idx, y_pred, y_test
 

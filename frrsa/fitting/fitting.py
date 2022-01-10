@@ -11,6 +11,7 @@ contexts of the `crossvalidation` module.
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Ridge
 
 #TODO: remove the following imports and conditionals before publicising repo.
 from pathlib import Path
@@ -72,7 +73,7 @@ def prepare_variables(X_train, X_test, y_train):
     y_train_z = y_train - y_train_mean
     return X_train_z, X_test_z, y_train_z, y_train_mean
 
-def find_hyperparameters(X_train, X_test, y_train, fracs):
+def find_hyperparameters(X_train, X_test, y_train, fracs, nonnegative, rng_state):
     '''Perform crossvalidated fracridge using each candidate hyperparameters.
     
     For each target in `y_train`, fracridge is fitted for each candidate
@@ -89,6 +90,11 @@ def find_hyperparameters(X_train, X_test, y_train, fracs):
         Target(s) of the training data.
     fracs : ndarray
         Candidate hyperparameters.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
+    rng_state : int
+        State of the randomness in the system. Should only
+        be set for testing purposes, will be deprecated in release-version.  
     
     Returns
     -------
@@ -98,11 +104,23 @@ def find_hyperparameters(X_train, X_test, y_train, fracs):
     X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, 
                                                                  X_test, 
                                                                  y_train)
-    y_predicted, *_ = fracridge(X_train, y_train, X_test_z, fracs)
+    if not nonnegative:
+        y_predicted, *_ = fracridge(X_train, y_train, X_test_z, fracs)
+    else:
+        n_targets = count_outputs(y_train)
+        n_hyperparams = len(fracs)
+        n_samples = X_test_z.shape[0]
+        y_predicted = np.zeros((n_samples,n_hyperparams,n_targets))
+        for idx,frac in enumerate(fracs):
+            model = Ridge(alpha=frac, fit_intercept=False, 
+                          tol=0.001, solver='lbfgs', 
+                          positive=True, random_state=rng_state)
+            model.fit(X_train, y_train)            
+            y_predicted[:,idx,:] = model.predict(X_test_z)
     y_predicted += y_train_mean
     return y_predicted
 
-def regularized_model(X_train, X_test, y_train, y_test, fracs):
+def regularized_model(X_train, X_test, y_train, y_test, fracs, nonnegative, rng_state):
     '''Perform crossvalidated fracridge for each target
     
     For each target in `y_train`, fracridge is fitted using each target's
@@ -120,7 +138,12 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs):
         Target(s) of the test data.
     fracs : ndarray
         Hyperparameter for each target in `y_train`.
-    
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
+    rng_state : int
+        State of the randomness in the system. Should only
+        be set for testing purposes, will be deprecated in release-version.  
+        
     Returns
     -------
     y_predicted : ndarray
@@ -129,21 +152,26 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs):
     X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, 
                                                                  X_test, 
                                                                  y_train)
-    n_outputs = count_outputs(y_train)
-    y_predicted = np.zeros((y_test.shape[0],n_outputs))
-    unique_fracs = np.unique(fracs)
-    for frac in unique_fracs:
-        idx = np.where(fracs==frac)[0]
-        n_current_outputs = len(idx)
-        y_train_current = y_train[:, idx]
-        y_pred_current, *_ = fracridge(X_train, y_train_current, X_test_z, frac)
-        y_predicted[:, idx] = y_pred_current.reshape(-1,n_current_outputs)
-    # To have _fully_ undstandardised predictions, one needs to add y_train
-    # to y_predicted.
+    if not nonnegative:
+        n_outputs = count_outputs(y_train)
+        y_predicted = np.zeros((y_test.shape[0],n_outputs))
+        unique_fracs = np.unique(fracs)
+        for frac in unique_fracs:
+            idx = np.where(fracs==frac)[0]
+            n_current_outputs = len(idx)
+            y_train_current = y_train[:, idx]
+            y_pred_current, *_ = fracridge(X_train, y_train_current, X_test_z, frac)
+            y_predicted[:, idx] = y_pred_current.reshape(-1,n_current_outputs)
+    else:
+        model = Ridge(alpha=fracs, fit_intercept=False, 
+                      tol=0.001, solver='lbfgs', 
+                      positive=True, random_state=rng_state)
+        model.fit(X_train, y_train)            
+        y_predicted = model.predict(X_test)
     y_predicted += y_train_mean
     return y_predicted
 
-def final_model(X, y, fracs):    
+def final_model(X, y, fracs, nonnegative, rng_state):
     '''Perform fracridge on the whole dataset for each target.
     
     For each target in `y`, fracridge is fitted to the whole dataset using
@@ -158,6 +186,11 @@ def final_model(X, y, fracs):
         Target(s) of the whole data set.
     fracs : ndarray
         Hyperparameter for each target in `y`.
+    nonnegative : bool
+        Indication of whether the betas shall be constrained to be non-negative.
+    rng_state : int
+        State of the randomness in the system. Should only
+        be set for testing purposes, will be deprecated in release-version.
     
     Returns
     -------
@@ -170,17 +203,26 @@ def final_model(X, y, fracs):
     y_mean = np.mean(y, axis=0)
     y = y - y_mean
     n_outputs = count_outputs(y)
-    beta_standardized = np.zeros((X.shape[1],n_outputs))
-    fracs = fracs.to_numpy()
-    unique_fracs = np.unique(fracs)
-    for frac in unique_fracs:
-        idx = np.where(fracs==frac)[0]
-        n_current_outputs = len(idx)
-        y_current = y[:, idx]
-        _, beta_standardized_current, _ = fracridge(X, y_current, fracs=frac,
-                                                    betas_wanted=True,
-                                                    pred_wanted=False)
-        beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_outputs)
+    
+    if not nonnegative:
+        beta_standardized = np.zeros((X.shape[1],n_outputs))
+        fracs = fracs.to_numpy()
+        unique_fracs = np.unique(fracs)
+        for frac in unique_fracs:
+            idx = np.where(fracs==frac)[0]
+            n_current_outputs = len(idx)
+            y_current = y[:, idx]
+            _, beta_standardized_current, _ = fracridge(X, y_current, fracs=frac,
+                                                        betas_wanted=True,
+                                                        pred_wanted=False)
+            beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_outputs)
+    else:
+        model = Ridge(alpha=fracs, fit_intercept=False, 
+                      tol=0.001, solver='lbfgs', 
+                      positive=True, random_state=rng_state)
+        model.fit(X, y)            
+        beta_standardized = model.coef_.T
+        
     beta_unstandardized = beta_standardized.T / X_stds 
     intercept = y_mean.reshape(n_outputs,1) - (beta_unstandardized @ X_means)
     beta_unstandardized = beta_unstandardized.T

@@ -21,6 +21,7 @@ predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 #%% Call the main funtion.
 preprocess = False
+nonnegative = True
 distance = 'sqeuclidean'
 outer_k = 5
 outer_reps = 1
@@ -33,17 +34,18 @@ parallel = True
 rng_state = 1
 
 predicted_RDM, predictions, scores, betas = frrsa(target,
-                                                 predictor, 
-                                                 preprocess,
-                                                 distance,
-                                                 outer_k, 
-                                                 outer_reps, 
-                                                 splitter, 
-                                                 hyperparams, 
-                                                 score_type, 
-                                                 betas_wanted,
-                                                 predictions_wanted,
-                                                 parallel,
-                                                 rng_state)
+                                                  predictor, 
+                                                  preprocess,
+                                                  nonnegative,
+                                                  distance,
+                                                  outer_k, 
+                                                  outer_reps, 
+                                                  splitter, 
+                                                  hyperparams, 
+                                                  score_type, 
+                                                  betas_wanted,
+                                                  predictions_wanted,
+                                                  parallel,
+                                                  rng_state)
 
 #%% End of script

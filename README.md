@@ -24,10 +24,12 @@ from fitting.crossvalidation import frrsa
 # load your "target" RDM
 # load your "predictor" data.
 # set the "preprocess" flag.
+# set the "nonnegative" flag.
 
 predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   predictor, 
                                                   preprocess,
+                                                  nonnegative,
                                                   distance='pearson',
                                                   outer_k=5, 
                                                   outer_reps=10, 
