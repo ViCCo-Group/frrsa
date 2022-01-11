@@ -3,8 +3,7 @@
 # Spyder 4.2.5 | Python 3.8.8 64-bit | Qt 5.9.7 | PyQt5 5.9.2 | Darwin 18.7.0 
 """
 Contains wrapper functions for fitting regularized regression models (currently
-only L2-regularization in the form of Fraction Ridge Regression) in different
-contexts of the `crossvalidation` module.
+only L2-regularization). Used in the `crossvalidation` module.
 
 @author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
 """
@@ -13,7 +12,6 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 
-#TODO: remove the following imports and conditionals before publicising repo.
 from pathlib import Path
 import os
 if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
@@ -22,17 +20,17 @@ else:
     from frrsa.frrsa.fitting.fracridge import fracridge
 
 def count_targets(y):
-    '''Compute amount of separate target variables.
+    '''Compute number of target RDMs.
     
     Parameters
     ----------
     y : ndarray
-        Data for all target variables.
+        Data of all target RDMs.
     
     Returns
     -------
-    amount : int
-        The amount of separate target variables.
+    number : int
+        The number of target RDMs.
     '''
     if y.ndim==2:
         return y.shape[1]
@@ -45,11 +43,11 @@ def prepare_variables(X_train, y_train, X_test=None):
     Parameters
     ----------
     X_train : ndarray
-        Data, the columns of which shall be z-transformed.
+        Training predictor matrix, the columns of which shall be z-transformed.
     y_train : ndarray
-        Data, the columns of which shall be centered.
+        Training target(s), the columns of which shall be centered.
     X_test : ndarray, optional
-        Data, the columns of which shall be z-transformed.
+        Test predictor matrix, the columns of which shall be z-transformed.
     
     Returns
     -------
@@ -65,7 +63,7 @@ def prepare_variables(X_train, y_train, X_test=None):
     y_train_c: ndarray
         Column-wise centered version of `y_train`.
     y_train_mean: ndarray
-        Mean of every column of `y_train`.
+        Column-wise mean of `y_train`.
     '''
     z_score = StandardScaler(copy=False, with_mean=True, with_std=True)
     X_train_z = z_score.fit_transform(X_train)
@@ -81,32 +79,32 @@ def prepare_variables(X_train, y_train, X_test=None):
         return X_train_z, z_score.mean_, z_score.scale_, y_train_c, y_train_mean
 
 def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng_state):
-    '''Perform crossvalidated Ridge regression using each candidate hyperparameter.
+    '''Perform crossvalidated Ridge regression with each candidate hyperparameter.
     
-    For each target in `y_train`, Ridge Regression is fitted for each candidate
+    For each target in `y_train`, Ridge regression is fitted with each candidate
     hyperparameter. Then, predictions for each target for each candidate
-    hyperparameter are computed.
+    hyperparameter are computed and returned.
     
     Parameters
     ----------
     X_train : ndarray
-        Predictor matrix of the training data.
+        Training predictor matrix.
     X_test : ndarray
-        Predictor matrix of the test data.
+        Test predictor matrix.
     y_train: ndarray
-        Target(s) of the training data.
+        Training target(s).
     hyperparams : ndarray
-        Candidate hyperparameters.
+        Candidate hyperparameters that shall be evaluated.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
     rng_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.  
+        State of the randomness. Should only be set for testing purposes.
     
     Returns
     -------
     y_predicted : ndarray
-        Predictions for all targets and all candidate hyperparameters.
+        Predictions for all targets and all candidate hyperparameters of shape
+        (n_samples, n_hyperparams, n_targets).
     '''
     X_train_z, X_test_z, y_train_c, y_train_mean = prepare_variables(X_train,
                                                                      y_train,
@@ -129,31 +127,30 @@ def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng
 def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, rng_state):
     '''Perform crossvalidated Ridge regression for each target
     
-    For each target in `y_train`, Ridge Regression is fitted using each target's
-    best hyperparameter. Then, predictions for each target are computed.
+    For each target in `y_train`, Ridge Regression is fitted with each target's
+    optimal hyperparameter. Then, predictions for each target are computed.
     
     Parameters
     ----------
     X_train : ndarray
-        Predictor matrix of the training data.
+        Training predictor matrix.
     X_test : ndarray
-        Predictor matrix of the test data.
+        Test predictor matrix.
     y_train: ndarray
-        Target(s) of the training data.
+        Training target(s).
     y_test: ndarray
-        Target(s) of the test data.
+        Test target(s).
     hyperparams : ndarray
-        Hyperparameter for each target in `y_train`.
+        Best hyperparameter for each target in `y_train`.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
     rng_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.  
+        State of the randomness. Should only be set for testing purposes.
         
     Returns
     -------
     y_predicted : ndarray
-        Predictions for all targets.
+        Predictions for all targets of shape (n_samples, n_targets).
     '''
     X_train_z, X_test_z, y_train_c, y_train_mean = prepare_variables(X_train,
                                                                      y_train,
@@ -190,17 +187,17 @@ def final_model(X, y, hyperparams, nonnegative, rng_state):
     y: ndarray
         Target(s) of the whole data set.
     hyperparams : ndarray
-        Hyperparameter for each target in `y`.
+        Best hyperparameter for each target in `y`.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
     rng_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.
+        State of the randomness. Should only be set for testing purposes.
     
     Returns
     -------
     beta_unstandardized : ndarray
-        Weight for each target's measurement channel.
+        Beta weight for each predictor's measurement channel plus intercept of
+        shape (n_channels+1, n_targets).
     '''
     X_z, X_means, X_stds, y_c, y_mean = prepare_variables(X, y)
     n_targets = count_targets(y)
@@ -227,8 +224,3 @@ def final_model(X, y, hyperparams, nonnegative, rng_state):
     beta_unstandardized = beta_unstandardized.T
     beta_unstandardized = np.concatenate((intercept.T, beta_unstandardized), axis=0)
     return beta_unstandardized
-
-
-
-
-
