@@ -198,8 +198,8 @@ def frrsa(target,
     if betas_wanted:
         idx = list(range(n_conditions))
         X, *_ = compute_predictor_distance(predictor, idx, distance)
-        fracs = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
-        betas = final_model(X, y_classical, fracs, nonnegative, rng_state)
+        hyperparams = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
+        betas = final_model(X, y_classical, hyperparams, nonnegative, rng_state)
         betas = pd.DataFrame(data=betas,
                              columns=['betas_target_{0}'.format(i+1) for i in range(n_targets)])
     else:

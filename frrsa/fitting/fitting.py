@@ -73,10 +73,10 @@ def prepare_variables(X_train, X_test, y_train):
     y_train_z = y_train - y_train_mean
     return X_train_z, X_test_z, y_train_z, y_train_mean
 
-def find_hyperparameters(X_train, X_test, y_train, fracs, nonnegative, rng_state):
-    '''Perform crossvalidated fracridge using each candidate hyperparameters.
+def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng_state):
+    '''Perform crossvalidated Ridge regression using each candidate hyperparameter.
     
-    For each target in `y_train`, fracridge is fitted for each candidate
+    For each target in `y_train`, Ridge Regression is fitted for each candidate
     hyperparameter. Then, predictions for each target for each candidate
     hyperparameter are computed.
     
@@ -88,7 +88,7 @@ def find_hyperparameters(X_train, X_test, y_train, fracs, nonnegative, rng_state
         Predictor matrix of the test data.
     y_train: ndarray
         Target(s) of the training data.
-    fracs : ndarray
+    hyperparams : ndarray
         Candidate hyperparameters.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
@@ -105,14 +105,14 @@ def find_hyperparameters(X_train, X_test, y_train, fracs, nonnegative, rng_state
                                                                  X_test, 
                                                                  y_train)
     if not nonnegative:
-        y_predicted, *_ = fracridge(X_train, y_train, X_test_z, fracs)
+        y_predicted, *_ = fracridge(X_train, y_train, X_test_z, hyperparams)
     else:
         n_targets = count_outputs(y_train)
-        n_hyperparams = len(fracs)
+        n_hyperparams = len(hyperparams)
         n_samples = X_test_z.shape[0]
         y_predicted = np.zeros((n_samples,n_hyperparams,n_targets))
-        for idx,frac in enumerate(fracs):
-            model = Ridge(alpha=frac, fit_intercept=False, 
+        for idx,hyperparam in enumerate(hyperparams):
+            model = Ridge(alpha=hyperparam, fit_intercept=False, 
                           tol=0.001, solver='lbfgs', 
                           positive=True, random_state=rng_state)
             model.fit(X_train, y_train)            
@@ -120,10 +120,10 @@ def find_hyperparameters(X_train, X_test, y_train, fracs, nonnegative, rng_state
     y_predicted += y_train_mean
     return y_predicted
 
-def regularized_model(X_train, X_test, y_train, y_test, fracs, nonnegative, rng_state):
-    '''Perform crossvalidated fracridge for each target
+def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, rng_state):
+    '''Perform crossvalidated Ridge regression for each target
     
-    For each target in `y_train`, fracridge is fitted using each target's
+    For each target in `y_train`, Ridge Regression is fitted using each target's
     best hyperparameter. Then, predictions for each target are computed.
     
     Parameters
@@ -136,7 +136,7 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs, nonnegative, rng_
         Target(s) of the training data.
     y_test: ndarray
         Target(s) of the test data.
-    fracs : ndarray
+    hyperparams : ndarray
         Hyperparameter for each target in `y_train`.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
@@ -155,15 +155,15 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs, nonnegative, rng_
     if not nonnegative:
         n_outputs = count_outputs(y_train)
         y_predicted = np.zeros((y_test.shape[0],n_outputs))
-        unique_fracs = np.unique(fracs)
-        for frac in unique_fracs:
-            idx = np.where(fracs==frac)[0]
+        unique_hyperparams = np.unique(hyperparams)
+        for hyperparam in unique_hyperparams:
+            idx = np.where(hyperparams==hyperparam)[0]
             n_current_outputs = len(idx)
             y_train_current = y_train[:, idx]
-            y_pred_current, *_ = fracridge(X_train, y_train_current, X_test_z, frac)
+            y_pred_current, *_ = fracridge(X_train, y_train_current, X_test_z, hyperparam)
             y_predicted[:, idx] = y_pred_current.reshape(-1,n_current_outputs)
     else:
-        model = Ridge(alpha=fracs, fit_intercept=False, 
+        model = Ridge(alpha=hyperparams, fit_intercept=False, 
                       tol=0.001, solver='lbfgs', 
                       positive=True, random_state=rng_state)
         model.fit(X_train, y_train)            
@@ -171,12 +171,12 @@ def regularized_model(X_train, X_test, y_train, y_test, fracs, nonnegative, rng_
     y_predicted += y_train_mean
     return y_predicted
 
-def final_model(X, y, fracs, nonnegative, rng_state):
-    '''Perform fracridge on the whole dataset for each target.
+def final_model(X, y, hyperparams, nonnegative, rng_state):
+    '''Perform Ridge Regression on the whole dataset for each target.
     
-    For each target in `y`, fracridge is fitted to the whole dataset using
+    For each target in `y`, Ridge regression is fitted to the whole dataset using
     each target's best hyperparameter. Then, betas for each target's
-    measurement channel are computed.
+    measurement channel are computed and returned.
     
     Parameters
     ----------
@@ -184,7 +184,7 @@ def final_model(X, y, fracs, nonnegative, rng_state):
         Predictor matrix of the whole data set.
     y: ndarray
         Target(s) of the whole data set.
-    fracs : ndarray
+    hyperparams : ndarray
         Hyperparameter for each target in `y`.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
@@ -206,18 +206,18 @@ def final_model(X, y, fracs, nonnegative, rng_state):
     
     if not nonnegative:
         beta_standardized = np.zeros((X.shape[1],n_outputs))
-        fracs = fracs.to_numpy()
-        unique_fracs = np.unique(fracs)
-        for frac in unique_fracs:
-            idx = np.where(fracs==frac)[0]
+        hyperparams = hyperparams.to_numpy()
+        unique_hyperparams = np.unique(hyperparams)
+        for hyperparam in unique_hyperparams:
+            idx = np.where(hyperparams==hyperparam)[0]
             n_current_outputs = len(idx)
             y_current = y[:, idx]
-            _, beta_standardized_current, _ = fracridge(X, y_current, fracs=frac,
+            _, beta_standardized_current, _ = fracridge(X, y_current, fracs=hyperparam,
                                                         betas_wanted=True,
                                                         pred_wanted=False)
             beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_outputs)
     else:
-        model = Ridge(alpha=fracs, fit_intercept=False, 
+        model = Ridge(alpha=hyperparams, fit_intercept=False, 
                       tol=0.001, solver='lbfgs', 
                       positive=True, random_state=rng_state)
         model.fit(X, y)            

@@ -66,29 +66,29 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
     '''
     n_targets = y_true.shape[1]
     if (y_pred.ndim == 2 and y_pred.shape[1] != 1 and n_targets == 1) or y_pred.ndim == 3:
-        n_alphas = y_pred.shape[1]
+        n_hyperparams = y_pred.shape[1]
     else:
-        n_alphas = 0
+        n_hyperparams = 0
         
-    # Multioutput & evaluating alphas.
-    if n_targets != 1 and n_alphas != 0:
-        scores = np.empty((n_alphas, n_targets))
+    # Multioutput & evaluating hyperparams.
+    if n_targets != 1 and n_hyperparams != 0:
+        scores = np.empty((n_hyperparams, n_targets))
         for target in range(n_targets):
-            for alpha in range(n_alphas):
+            for hyperparam in range(n_hyperparams):
                 if score_type == 'pearson':
-                    scores[alpha, target] = pearsonr(y_true[:, target], 
-                                                     y_pred[:, alpha, target])[0]
+                    scores[hyperparam, target] = pearsonr(y_true[:, target], 
+                                                          y_pred[:, hyperparam, target])[0]
                 elif score_type == 'spearman':
-                    scores[alpha, target] = spearmanr(y_true[:,target],
-                                                      y_pred[:, alpha, target])[0]
+                    scores[hyperparam, target] = spearmanr(y_true[:,target],
+                                                           y_pred[:, hyperparam, target])[0]
                 elif score_type == 'RSS':
                     # Note: the RSS is converted by multiplying with -1 so that it is a
                     # score to be _maximised_ just as the other two options.
-                    scores[alpha, target] = -((y_true[:, target] - 
-                                               y_pred[:, alpha, target]) ** 2).sum()
+                    scores[hyperparam, target] = -((y_true[:, target] - 
+                                                    y_pred[:, hyperparam, target]) ** 2).sum()
         
-    # (Multioutput or Unioutput) & not evaluating alphas.
-    elif n_alphas == 0:
+    # (Multioutput or Unioutput) & not evaluating hyperparams.
+    elif n_hyperparams == 0:
         scores = np.empty(n_targets)
         for target in range(n_targets):
             if score_type == 'pearson':
@@ -98,14 +98,14 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
             elif score_type == 'RSS':
                 scores[target] = -((y_true[:, target] - y_pred[:, target]) ** 2).sum()
      
-    # Unioutput & evaluating alphas.    
-    elif n_targets == 1 and n_alphas != 0:
-        scores = np.empty((n_alphas, n_targets))
-        for alpha in range(n_alphas):
+    # Unioutput & evaluating hyperparams.    
+    elif n_targets == 1 and n_hyperparams != 0:
+        scores = np.empty((n_hyperparams, n_targets))
+        for hyperparam in range(n_hyperparams):
             if score_type == 'pearson':
-                scores[alpha] = pearsonr(y_true[:, 0], y_pred[:, alpha])[0]
+                scores[hyperparam] = pearsonr(y_true[:, 0], y_pred[:, hyperparam])[0]
             elif score_type == 'spearman':
-                scores[alpha] = spearmanr(y_true[:, 0], y_pred[:, alpha])[0]
+                scores[hyperparam] = spearmanr(y_true[:, 0], y_pred[:, hyperparam])[0]
             elif score_type == 'RSS':
-                scores[alpha] = -((y_true[:, 0] - y_pred[:, alpha]) ** 2).sum()
+                scores[hyperparam] = -((y_true[:, 0] - y_pred[:, hyperparam]) ** 2).sum()
     return scores
