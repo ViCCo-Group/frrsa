@@ -10,13 +10,13 @@ from fitting.crossvalidation import frrsa
 # Specify a seed for reproducible results.
 rng = default_rng(seed=4)
 
-n_units = 100 # How many measurement channels?
+n_channels = 100 # How many measurement channels?
 n_objects = 100 # How many objects aka conditions?
 n_targets = 2 # How many different target RDMs?
 
 # Simulate target RDM and predictor data.
 target = rng.integers(low=0, high=100, size=(n_objects,n_objects,n_targets))
-predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
+predictor = rng.integers(low=0, high=100, size=(n_channels,n_objects))
 
 
 #%% Call the main funtion.
