@@ -139,8 +139,11 @@ def frrsa(target,
         (channel*target).
     '''
     if hyperparams is None:
-        hyperparams = np.linspace(.05, 1, 20)
-
+        if not nonnegative:
+            hyperparams = np.linspace(.05, 1, 20)
+        else:
+            hyperparams = [1e-1, 1e0, 1e1, 5e1, 1e2, 5e2, 1e3, 4e3, 7e3, 1e4, 3e4, 5e4, 7e4, 1e5]
+            
     if not hasattr(hyperparams, "__len__"):
         hyperparams = [hyperparams]
     hyperparams = np.array(hyperparams)
