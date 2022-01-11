@@ -160,9 +160,9 @@ def frrsa(target,
               The algorithm is proceeding now.')
     
     if hyperparams.ndim>1:
-        sys.exit('You provided hyperparams not in a one-dimensional format.\n\
-                 Try to provide your hyperparams in a non-nested list instead.\n\
-                 Aborting...')
+        sys.exit(f'Your hyperparams should be one-dimensional, but they have \
+                 {hyperparams.ndim} dimensions.\nTry to provide your hyperparams \
+                 in a non-nested list instead.\n Aborting...')
 
     if np.all(np.diff(hyperparams)>0):
         print('Your provided hyperparams were not in a strictly increasing order.\n\
