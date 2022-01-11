@@ -8,6 +8,7 @@ Representational Similarity Analysis.
 @author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
 """
 
+import sys
 import numpy as np
 import pandas as pd
 import psutil
@@ -86,7 +87,8 @@ def frrsa(target,
         is split randomly. If `kfold`, a classical k-fold is set up.
     hyperparams : array-like, optional
         The hyperparameter candidates to evaluate in the regularization scheme
-        (defaults to None). If `None`, a sensible default is chosen internally.
+        (defaults to None). Should be in strictly ascending order.
+        If `None`, a sensible default is chosen internally.
     score_type : {'pearson', 'spearman'}, optional
         Type of association measure to compute between predicting and target RDMs.
         (defaults to `pearson`).
@@ -143,11 +145,30 @@ def frrsa(target,
             hyperparams = np.linspace(.05, 1, 20)
         else:
             hyperparams = [1e-1, 1e0, 1e1, 5e1, 1e2, 5e2, 1e3, 4e3, 7e3, 1e4, 3e4, 5e4, 7e4, 1e5]
+        print(f'You did not provide hyperparams. We chose {hyperparams} for you.\n\
+              The algorithm is now proceeding normally.')
             
     if not hasattr(hyperparams, "__len__"):
         hyperparams = [hyperparams]
+
     hyperparams = np.array(hyperparams)
-            
+    
+    if len(hyperparams)==1:
+        print(f'You only provided one hyperparam candidate, namely {hyperparams}.\n\
+              That doesn\'t seem right...\n\
+              You might want to abort and provide more hyperparams. \n\
+              The algorithm is proceeding now.')
+    
+    if hyperparams.ndim>1:
+        sys.exit('You provided hyperparams not in a one-dimensional format.\n\
+                 Try to provide your hyperparams in a non-nested list instead.\n\
+                 Aborting...')
+
+    if np.all(np.diff(hyperparams)>0):
+        print('Your provided hyperparams were not in a strictly increasing order.\n\
+              They were sorted internally.\nThe algorithm is now proceeding normally.')
+        hyperparams.sort()
+        
     try: 
         n_conditions = target.shape[1]
         n_targets = target.shape[2]
