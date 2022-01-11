@@ -12,10 +12,10 @@ rng = default_rng(seed=4)
 
 n_units = 100 # How many measurement channels?
 n_objects = 100 # How many objects aka conditions?
-n_outputs = 2 # How many different outputs?
+n_targets = 2 # How many different target RDMs?
 
-# Simulate output and inputs.
-target = rng.integers(low=0, high=100, size=(n_objects,n_objects,n_outputs))
+# Simulate target RDM and predictor data.
+target = rng.integers(low=0, high=100, size=(n_objects,n_objects,n_targets))
 predictor = rng.integers(low=0, high=100, size=(n_units,n_objects))
 
 

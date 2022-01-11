@@ -70,7 +70,7 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
     else:
         n_hyperparams = 0
         
-    # Multioutput & evaluating hyperparams.
+    # Multiple targets & evaluating hyperparams.
     if n_targets != 1 and n_hyperparams != 0:
         scores = np.empty((n_hyperparams, n_targets))
         for target in range(n_targets):
@@ -87,7 +87,7 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
                     scores[hyperparam, target] = -((y_true[:, target] - 
                                                     y_pred[:, hyperparam, target]) ** 2).sum()
         
-    # (Multioutput or Unioutput) & not evaluating hyperparams.
+    # (Multiple targets or one target) & not evaluating hyperparams.
     elif n_hyperparams == 0:
         scores = np.empty(n_targets)
         for target in range(n_targets):
@@ -98,7 +98,7 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
             elif score_type == 'RSS':
                 scores[target] = -((y_true[:, target] - y_pred[:, target]) ** 2).sum()
      
-    # Unioutput & evaluating hyperparams.    
+    # One target & evaluating hyperparams.    
     elif n_targets == 1 and n_hyperparams != 0:
         scores = np.empty((n_hyperparams, n_targets))
         for hyperparam in range(n_hyperparams):

@@ -23,7 +23,7 @@ else:
 
 z_score = StandardScaler(copy=False, with_mean=True, with_std=True)
 
-def count_outputs(y):
+def count_targets(y):
     '''Compute amount of separate target variables.
     
     Parameters
@@ -107,7 +107,7 @@ def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng
     if not nonnegative:
         y_predicted, *_ = fracridge(X_train, y_train, X_test_z, hyperparams)
     else:
-        n_targets = count_outputs(y_train)
+        n_targets = count_targets(y_train)
         n_hyperparams = len(hyperparams)
         n_samples = X_test_z.shape[0]
         y_predicted = np.zeros((n_samples,n_hyperparams,n_targets))
@@ -153,15 +153,15 @@ def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative
                                                                  X_test, 
                                                                  y_train)
     if not nonnegative:
-        n_outputs = count_outputs(y_train)
-        y_predicted = np.zeros((y_test.shape[0],n_outputs))
+        n_targets = count_targets(y_train)
+        y_predicted = np.zeros((y_test.shape[0],n_targets))
         unique_hyperparams = np.unique(hyperparams)
         for hyperparam in unique_hyperparams:
             idx = np.where(hyperparams==hyperparam)[0]
-            n_current_outputs = len(idx)
+            n_current_targets = len(idx)
             y_train_current = y_train[:, idx]
             y_pred_current, *_ = fracridge(X_train, y_train_current, X_test_z, hyperparam)
-            y_predicted[:, idx] = y_pred_current.reshape(-1,n_current_outputs)
+            y_predicted[:, idx] = y_pred_current.reshape(-1,n_current_targets)
     else:
         model = Ridge(alpha=hyperparams, fit_intercept=False, 
                       tol=0.001, solver='lbfgs', 
@@ -202,20 +202,20 @@ def final_model(X, y, hyperparams, nonnegative, rng_state):
     X_stds = z_score.scale_
     y_mean = np.mean(y, axis=0)
     y = y - y_mean
-    n_outputs = count_outputs(y)
+    n_targets = count_targets(y)
     
     if not nonnegative:
-        beta_standardized = np.zeros((X.shape[1],n_outputs))
+        beta_standardized = np.zeros((X.shape[1],n_targets))
         hyperparams = hyperparams.to_numpy()
         unique_hyperparams = np.unique(hyperparams)
         for hyperparam in unique_hyperparams:
             idx = np.where(hyperparams==hyperparam)[0]
-            n_current_outputs = len(idx)
+            n_current_targets = len(idx)
             y_current = y[:, idx]
             _, beta_standardized_current, _ = fracridge(X, y_current, fracs=hyperparam,
                                                         betas_wanted=True,
                                                         pred_wanted=False)
-            beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_outputs)
+            beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_targets)
     else:
         model = Ridge(alpha=hyperparams, fit_intercept=False, 
                       tol=0.001, solver='lbfgs', 
@@ -224,7 +224,7 @@ def final_model(X, y, hyperparams, nonnegative, rng_state):
         beta_standardized = model.coef_.T
         
     beta_unstandardized = beta_standardized.T / X_stds 
-    intercept = y_mean.reshape(n_outputs,1) - (beta_unstandardized @ X_means)
+    intercept = y_mean.reshape(n_targets,1) - (beta_unstandardized @ X_means)
     beta_unstandardized = beta_unstandardized.T
     beta_unstandardized = np.concatenate((intercept.T, beta_unstandardized), axis=0)
     return beta_unstandardized
