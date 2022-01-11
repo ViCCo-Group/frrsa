@@ -21,8 +21,6 @@ if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.
 else:
     from frrsa.frrsa.fitting.fracridge import fracridge
 
-z_score = StandardScaler(copy=False, with_mean=True, with_std=True)
-
 def count_targets(y):
     '''Compute amount of separate target variables.
     
@@ -41,37 +39,46 @@ def count_targets(y):
     else: 
         return 1
 
-def prepare_variables(X_train, X_test, y_train):
+def prepare_variables(X_train, y_train, X_test=None):
     '''Compute column-wise transformed versions of variables.
     
     Parameters
     ----------
     X_train : ndarray
         Data, the columns of which shall be z-transformed.
-    X_test : ndarray
-        Data, the columns of which shall be z-transformed.
     y_train : ndarray
         Data, the columns of which shall be centered.
+    X_test : ndarray, optional
+        Data, the columns of which shall be z-transformed.
     
     Returns
     -------
     X_train_z : ndarray
         Column-wise z-transformed version of `X_train`.
+    z_score.mean_ : fitted scaler
+        Column-wise mean of `X_train`. Only returned if `X_test` is none.
+    z_score.scale_ : fitted scaler
+        Column-wise std of `X_train`. Only returned if `X_test` is none.
     X_test_z : ndarray
-        Column-wise z-transformed version of `X_test`.
-    y_train_z: ndarray
+        Column-wise z-transformed version of `X_test`. Only returned if `X_test` 
+        is not none.
+    y_train_c: ndarray
         Column-wise centered version of `y_train`.
     y_train_mean: ndarray
         Mean of every column of `y_train`.
     '''
+    z_score = StandardScaler(copy=False, with_mean=True, with_std=True)
     X_train_z = z_score.fit_transform(X_train)
-    # Scale X_test with _X_train_stds_ to get _nearly_ unstandardised
-    # predictions. Note that X_train is standardised. Therefore, scaling
-    # X_test with X_train_stds undoes the scaling of X_train.
-    X_test_z = z_score.transform(X_test)
     y_train_mean = np.mean(y_train, axis=0)
-    y_train_z = y_train - y_train_mean
-    return X_train_z, X_test_z, y_train_z, y_train_mean
+    y_train_c = y_train - y_train_mean
+    if X_test is not None:
+        # Scale X_test with _X_train_stds_ to get _nearly_ unstandardised
+        # predictions. Note that X_train is standardised. Therefore, scaling
+        # X_test with X_train_stds undoes the scaling of X_train.
+        X_test_z = z_score.transform(X_test)
+        return X_train_z, X_test_z, y_train_c, y_train_mean
+    else:
+        return X_train_z, z_score.mean_, z_score.scale_, y_train_c, y_train_mean
 
 def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng_state):
     '''Perform crossvalidated Ridge regression using each candidate hyperparameter.
@@ -101,21 +108,20 @@ def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng
     y_predicted : ndarray
         Predictions for all targets and all candidate hyperparameters.
     '''
-    X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, 
-                                                                 X_test, 
-                                                                 y_train)
+    X_train_z, X_test_z, y_train_c, y_train_mean = prepare_variables(X_train,
+                                                                     y_train,
+                                                                     X_test)
     if not nonnegative:
-        y_predicted, *_ = fracridge(X_train, y_train, X_test_z, hyperparams)
+        y_predicted, *_ = fracridge(X_train_z, y_train_c, X_test_z, hyperparams)
     else:
-        n_targets = count_targets(y_train)
+        n_targets = count_targets(y_train_c)
         n_hyperparams = len(hyperparams)
         n_samples = X_test_z.shape[0]
         y_predicted = np.zeros((n_samples,n_hyperparams,n_targets))
         for idx,hyperparam in enumerate(hyperparams):
-            model = Ridge(alpha=hyperparam, fit_intercept=False, 
-                          tol=0.001, solver='lbfgs', 
-                          positive=True, random_state=rng_state)
-            model.fit(X_train, y_train)            
+            model = Ridge(alpha=hyperparam, fit_intercept=False, tol=0.001,
+                          solver='lbfgs', positive=True, random_state=rng_state)
+            model.fit(X_train_z, y_train_c)            
             y_predicted[:,idx,:] = model.predict(X_test_z)
     y_predicted += y_train_mean
     return y_predicted
@@ -149,25 +155,24 @@ def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative
     y_predicted : ndarray
         Predictions for all targets.
     '''
-    X_train, X_test_z, y_train, y_train_mean = prepare_variables(X_train, 
-                                                                 X_test, 
-                                                                 y_train)
+    X_train_z, X_test_z, y_train_c, y_train_mean = prepare_variables(X_train,
+                                                                     y_train,
+                                                                     X_test)
     if not nonnegative:
-        n_targets = count_targets(y_train)
+        n_targets = count_targets(y_train_c)
         y_predicted = np.zeros((y_test.shape[0],n_targets))
         unique_hyperparams = np.unique(hyperparams)
         for hyperparam in unique_hyperparams:
             idx = np.where(hyperparams==hyperparam)[0]
             n_current_targets = len(idx)
-            y_train_current = y_train[:, idx]
-            y_pred_current, *_ = fracridge(X_train, y_train_current, X_test_z, hyperparam)
+            y_train_current = y_train_c[:, idx]
+            y_pred_current, *_ = fracridge(X_train_z, y_train_current, X_test_z, hyperparam)
             y_predicted[:, idx] = y_pred_current.reshape(-1,n_current_targets)
     else:
-        model = Ridge(alpha=hyperparams, fit_intercept=False, 
-                      tol=0.001, solver='lbfgs', 
-                      positive=True, random_state=rng_state)
-        model.fit(X_train, y_train)            
-        y_predicted = model.predict(X_test)
+        model = Ridge(alpha=hyperparams, fit_intercept=False, tol=0.001,
+                      solver='lbfgs', positive=True, random_state=rng_state)
+        model.fit(X_train_z, y_train_c)            
+        y_predicted = model.predict(X_test_z)
     y_predicted += y_train_mean
     return y_predicted
 
@@ -197,34 +202,33 @@ def final_model(X, y, hyperparams, nonnegative, rng_state):
     beta_unstandardized : ndarray
         Weight for each target's measurement channel.
     '''
-    X = z_score.fit_transform(X)
-    X_means = z_score.mean_.reshape(-1,1)
-    X_stds = z_score.scale_
-    y_mean = np.mean(y, axis=0)
-    y = y - y_mean
+    X_z, X_means, X_stds, y_c, y_mean = prepare_variables(X, y)
     n_targets = count_targets(y)
-    
     if not nonnegative:
-        beta_standardized = np.zeros((X.shape[1],n_targets))
+        beta_standardized = np.zeros((X_z.shape[1],n_targets))
         hyperparams = hyperparams.to_numpy()
         unique_hyperparams = np.unique(hyperparams)
         for hyperparam in unique_hyperparams:
             idx = np.where(hyperparams==hyperparam)[0]
             n_current_targets = len(idx)
-            y_current = y[:, idx]
-            _, beta_standardized_current, _ = fracridge(X, y_current, fracs=hyperparam,
+            y_current = y_c[:, idx]
+            _, beta_standardized_current, _ = fracridge(X_z, y_current, 
+                                                        fracs=hyperparam,
                                                         betas_wanted=True,
                                                         pred_wanted=False)
             beta_standardized[:, idx] = beta_standardized_current.reshape(-1,n_current_targets)
     else:
-        model = Ridge(alpha=hyperparams, fit_intercept=False, 
-                      tol=0.001, solver='lbfgs', 
-                      positive=True, random_state=rng_state)
-        model.fit(X, y)            
+        model = Ridge(alpha=hyperparams, fit_intercept=False, tol=0.001,
+                      solver='lbfgs', positive=True, random_state=rng_state)
+        model.fit(X_z, y_c)
         beta_standardized = model.coef_.T
-        
     beta_unstandardized = beta_standardized.T / X_stds 
-    intercept = y_mean.reshape(n_targets,1) - (beta_unstandardized @ X_means)
+    intercept = y_mean.reshape(n_targets,1) - (beta_unstandardized @ X_means.reshape(-1,1))
     beta_unstandardized = beta_unstandardized.T
     beta_unstandardized = np.concatenate((intercept.T, beta_unstandardized), axis=0)
     return beta_unstandardized
+
+
+
+
+
