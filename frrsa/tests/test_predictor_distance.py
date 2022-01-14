@@ -21,7 +21,7 @@ class TestHadamard(unittest.TestCase):
             hadamard_prod, first_pair_idx, second_pair_idx = hadamard(np.array([]))
 
     def test_not_enough_columns(self):
-        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns2'):
+        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns.'):
             hadamard_prod, first_pair_idx, second_pair_idx = hadamard(np.array([[1], [2]]))
 
     def test_no_matrix(self):
