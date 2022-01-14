@@ -2,23 +2,23 @@
 """
 # =============================================================================
 # Note from P.Kaniuth: the whole package "fracridge", of which this module is a
-# part, is the sole work of A. Rokem K. Kay, see their paper "Fractional ridge 
-# regression: a fast, interpretable reparameterization of ridge regression" 
-# (2020) GigaScience, Volume 9, Issue 12, December 2020, 
+# part, is the sole work of A. Rokem K. Kay, see their paper "Fractional ridge
+# regression: a fast, interpretable reparameterization of ridge regression"
+# (2020) GigaScience, Volume 9, Issue 12, December 2020,
 # https://doi.org/10.1093/gigascience/giaa133. and the respective GitHub repo
 # https://github.com/nrdg/fracridge/tree/master/fracridge
-#     
+
 # The only changes I implemented are the following:
 #     - the function "fracridge" contains the argument "X_test" which
-#         (defaults None).
+#         defaults to None.
 #     - the function "fracridge" can return predictions directly.
 #     - the function "fracridge" contains the argument "pred_wanted" to
 #         specify whether predictions shall be output at all (default True).
 #     - the function "fracridge" contains the argument "betas_wanted" to
 #         specify whether coefs shall be output at all (default False).
 #     - other functions defined in the original module were deleted, since they
-#         are not needed in the framework of my project FR-RSA.
-# Last updated: 29st of July 2021
+#         are not needed in the framework of the FR-RSA project.
+# Package last updated on: 14th of January 2022.
 # =============================================================================
 
 import numpy as np
@@ -46,9 +46,9 @@ def _do_svd(X, y, jit=True):
         try:
             from ._linalg import svd
         except ImportError:
-            warnings.warn("The `jit` key-word argument is set to `True` ",
-                          "but numba could not be imported, or just-in time ",
-                          "compilation failed. Falling back to ",
+            warnings.warn("The `jit` key-word argument is set to `True` "\
+                          "but numba could not be imported, or just-in time "\
+                          "compilation failed. Falling back to "\
                           "`scipy.linalg.svd`")
             use_scipy = True
 
@@ -124,7 +124,6 @@ def fracridge(X, y, X_test=None, fracs=None, tol=1e-10, jit=True, betas_wanted=F
     >>> print(np.linalg.norm(coef2 - coef3))  # doctest: +NUMBER
     0.0
     """
-    #TODO: get rid of the next conditional since default fracs are assigned at beginning of frrsa function.
     if fracs is None:
         fracs = np.arange(.1, 1.1, .1)
 
