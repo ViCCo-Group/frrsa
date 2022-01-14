@@ -17,15 +17,15 @@ class TestHadamard(unittest.TestCase):
         assert_allclose(second_pair_idx, expected_second_pair_idx)
 
     def test_empty(self):
-        with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
+        with self.assertRaisesRegex(Exception, 'Predictor has to be two-dimensional.'):
             hadamard_prod, first_pair_idx, second_pair_idx = hadamard(np.array([]))
 
     def test_not_enough_columns(self):
-        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns'):
+        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns2'):
             hadamard_prod, first_pair_idx, second_pair_idx = hadamard(np.array([[1], [2]]))
 
     def test_no_matrix(self):
-        with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
+        with self.assertRaisesRegex(Exception, 'Predictor has to be two-dimensional.'):
             hadamard_prod, first_pair_idx, second_pair_idx = hadamard(np.array([1]))
 
 class TestSqeuclidean(unittest.TestCase):
@@ -41,28 +41,28 @@ class TestSqeuclidean(unittest.TestCase):
 
     def test_empty(self):
         predictor = np.array([])
-        with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
+        with self.assertRaisesRegex(Exception, 'Predictor has to be two-dimensional.'):
             distance, first_pair_idx, second_pair_idx = sqeuclidean(predictor)
 
     def test_not_enough_columns(self):
         predictor = np.array([[1], [2]])
-        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns'):
+        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns.'):
             distance, first_pair_idx, second_pair_idx = sqeuclidean(predictor)
 
     def test_no_matrix(self):
         predictor = np.array([1])
-        with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
+        with self.assertRaisesRegex(Exception, 'Predictor has to be two-dimensional.'):
             distance, first_pair_idx, second_pair_idx = sqeuclidean(predictor)
 
 class TestPredictorCheck(unittest.TestCase):
     def test_no_matrix(self):
         predictor = np.array([1])
-        with self.assertRaisesRegex(Exception, 'Predictor has to be a matrix'):
+        with self.assertRaisesRegex(Exception, 'Predictor has to be two-dimensional.'):
             check_predictor_data(predictor)
 
     def test_not_enough_columns(self):
         predictor = np.array([[1], [2]])
-        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns'):
+        with self.assertRaisesRegex(Exception, 'Predictor needs at least 2 columns.'):
             check_predictor_data(predictor)
 
 class TestIndicesCalculation(unittest.TestCase):
