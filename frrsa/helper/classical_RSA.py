@@ -64,28 +64,3 @@ def flatten_RDM(rdm: np.ndarray) -> np.ndarray:
         rdv = rdm[np.triu_indices(rdm.shape[0], k=1)].reshape(-1, 1)
     return rdv
 
-
-def correlate_RDMs(rdv1, rdv2, score_type='pearson'):
-    """Relate two flattened dissimilarity matrices to each other.
-
-    Parameters
-    ----------
-    rdv1 : array_like
-        First flattened dissimilarity matrix.
-    rdv2 : array_like
-        Second flattened dissimilarity matrix.
-    score_type : {'pearson', 'spearman'}, optional
-        Type of association measure to compute (defaults to `pearson`).
-
-    Return
-    ------
-    corr : float
-        Correlation coefficient.
-    p_value : float
-        Two-tailed p-value.
-    """
-    if score_type == 'pearson':
-        corr, p_value = pearsonr(rdv1, rdv2)
-    elif score_type == 'spearman':
-        corr, p_value = spearmanr(rdv1, rdv2)
-    return corr, p_value
