@@ -178,6 +178,11 @@ def frrsa(target,
             predictor = z_scale.fit_transform(predictor)
         elif distance == 'sqeuclidean':
             predictor = normalize(predictor, norm='l2', axis=0)
+            
+    #TODO: the following conditional is temporary and must be reverted upon 
+    #paper publication.    
+    if distance == 'pearson':
+        target = 1-target
 
     y_classical = flatten_RDM(target)
     x_classical = flatten_RDM(make_RDM(predictor, distance))
@@ -348,7 +353,7 @@ def start_outer_cross_validation(n_conditions,
         for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
             outer_loop_count += 1
             outer_runs.append([outer_train_indices, outer_test_indices, outer_loop_count])
-
+        
         number_cores = psutil.cpu_count(logical=False)  # use physical cores.
         jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run,
                                                                                        splitter,
@@ -476,6 +481,7 @@ def run_outer_cross_validation_batch(splitter,
     best_hyperparam : ndarray
         Holds the best hyperparameter for each target, for the current outer fold.
     """
+    print("Check")
     inner_hyperparams_scores = start_inner_cross_validation(splitter,
                                                             rng_state,
                                                             n_targets,
@@ -510,7 +516,7 @@ def run_outer_cross_validation_batch(splitter,
     targets = np.empty((y_test.shape))
     targets[:, :] = list(range(n_targets))
     targets = targets.reshape(len(targets) * n_targets, order='F')
-
+    print("here")
     if predictions_wanted:
         y_test_reshaped = y_test.reshape(len(y_test) * n_targets, order='F')  # make all ys 1D.
         y_regularized_reshaped = y_regularized.reshape(len(y_regularized) * n_targets, order='F')
