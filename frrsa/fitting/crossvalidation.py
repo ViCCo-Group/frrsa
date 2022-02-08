@@ -180,12 +180,17 @@ def frrsa(target,
             predictor = normalize(predictor, norm='l2', axis=0)
             
     #TODO: the following conditional is temporary and must be reverted upon 
-    #paper publication.    
+    #paper publication.
     if distance == 'pearson':
         target = 1-target
 
     y_classical = flatten_RDM(target)
     x_classical = flatten_RDM(make_RDM(predictor, distance))
+    
+    #TODO: the following conditional is temporary and must be reverted upon 
+    #paper publication.
+    if distance == 'pearson':
+        x_classical = 1-x_classical
 
     classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
     classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
@@ -481,7 +486,7 @@ def run_outer_cross_validation_batch(splitter,
     best_hyperparam : ndarray
         Holds the best hyperparameter for each target, for the current outer fold.
     """
-    print("Check")
+    # print("Check")
     inner_hyperparams_scores = start_inner_cross_validation(splitter,
                                                             rng_state,
                                                             n_targets,
@@ -516,7 +521,7 @@ def run_outer_cross_validation_batch(splitter,
     targets = np.empty((y_test.shape))
     targets[:, :] = list(range(n_targets))
     targets = targets.reshape(len(targets) * n_targets, order='F')
-    print("here")
+    # print("here")
     if predictions_wanted:
         y_test_reshaped = y_test.reshape(len(y_test) * n_targets, order='F')  # make all ys 1D.
         y_regularized_reshaped = y_regularized.reshape(len(y_regularized) * n_targets, order='F')
