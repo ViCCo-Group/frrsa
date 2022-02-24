@@ -179,18 +179,8 @@ def frrsa(target,
         elif distance == 'sqeuclidean':
             predictor = normalize(predictor, norm='l2', axis=0)
             
-    #TODO: the following conditional is temporary and must be reverted upon 
-    #paper publication.
-    if distance == 'pearson':
-        target = 1-target
-
     y_classical = flatten_RDM(target)
     x_classical = flatten_RDM(make_RDM(predictor, distance))
-    
-    #TODO: the following conditional is temporary and must be reverted upon 
-    #paper publication.
-    if distance == 'pearson':
-        x_classical = 1-x_classical
 
     classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
     classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
