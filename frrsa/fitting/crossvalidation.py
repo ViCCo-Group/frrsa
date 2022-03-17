@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 # Spyder 4.2.5 | Python 3.8.8 64-bit | Qt 5.9.7 | PyQt5 5.9.2 | Darwin 18.7.0
 """
-Contains all high-level functions necessary to conduct feature-reweighted
-Representational Similarity Analysis.
+Conducts feature-reweighted Representational Similarity Analysis (frrsa).
 
 @author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
 """
@@ -19,14 +18,12 @@ from sklearn.preprocessing import StandardScaler, normalize
 from joblib import Parallel, delayed
 
 if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
-    print('within submodule')
     from helper.classical_RSA import flatten_RDM, make_RDM
     from helper.data_splitter import data_splitter
     from helper.predictor_distance import hadamard, sqeuclidean
     from fitting.scoring import scoring, scoring_classical
     from fitting.fitting import regularized_model, find_hyperparameters, final_model
 else:
-    print('outside submodule')
     from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
     from frrsa.frrsa.helper.predictor_distance import hadamard, sqeuclidean
@@ -114,12 +111,12 @@ def frrsa(target,
         you really need it. Data columns are as follows:
 
         ================   ================================================================
-        dissim_target      Dissimilarity for the target RDMs' condition pairs (as `float`)
-        dissim_predicted   Dissimilarity for the predicting RDM's  condition pairs (as `float`)
-        target             Target to which dissim's belong (as `int`)
-        fold               Fold to which dissim's belong (as `int`)
-        first_obj          First condition of pair to which dissim's belong (as `int`)
-        second_obj         Second condition of pair to which dissim's belong (as `int`)
+        dissim_target      Dissimilarities for the target RDMs' condition pairs (as `float`)
+        dissim_predicted   Reweighted dissimilarities for the predicting RDM's condition pairs (as `float`)
+        target             Target to which dissimilarities belong (as `int`)
+        fold               Fold to which dissimilarities belong (as `int`)
+        first_obj          First condition of pair to which dissimilarities belong (as `int`)
+        second_obj         Second condition of pair to which dissimilarities belong (as `int`)
         ================   ================================================================
 
     scores : pd.DataFrame
@@ -135,7 +132,8 @@ def frrsa(target,
 
     betas : pd.DataFrame
         Holds the weights for each target's measurement channel with the shape
-        (n_conditions, n_targets).
+        (n_conditions, n_targets). Note that the first weight for each target is
+        not a channel-weight but an offset.
     """
     if hyperparams is None:
         if not nonnegative:
@@ -178,7 +176,7 @@ def frrsa(target,
             predictor = z_scale.fit_transform(predictor)
         elif distance == 'sqeuclidean':
             predictor = normalize(predictor, norm='l2', axis=0)
-            
+
     y_classical = flatten_RDM(target)
     x_classical = flatten_RDM(make_RDM(predictor, distance))
 
@@ -214,6 +212,8 @@ def frrsa(target,
     if predictions_wanted:
         predictions = pd.DataFrame(data=np.delete(predictions, 0, 0),
                                    columns=['dissim_target', 'dissim_predicted', 'target', 'fold', 'first_obj', 'second_obj'])
+        if (nonnegative is False) & (distance == 'sqeuclidean'):
+            predictions.loc[predictions['dissim_predicted'] < 0, 'dissim_predicted'] = 0
     else:
         predictions = None
 
@@ -348,7 +348,7 @@ def start_outer_cross_validation(n_conditions,
         for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
             outer_loop_count += 1
             outer_runs.append([outer_train_indices, outer_test_indices, outer_loop_count])
-        
+
         number_cores = psutil.cpu_count(logical=False)  # use physical cores.
         jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run,
                                                                                        splitter,
@@ -511,7 +511,6 @@ def run_outer_cross_validation_batch(splitter,
     targets = np.empty((y_test.shape))
     targets[:, :] = list(range(n_targets))
     targets = targets.reshape(len(targets) * n_targets, order='F')
-    # print("here")
     if predictions_wanted:
         y_test_reshaped = y_test.reshape(len(y_test) * n_targets, order='F')  # make all ys 1D.
         y_regularized_reshaped = y_regularized.reshape(len(y_regularized) * n_targets, order='F')
