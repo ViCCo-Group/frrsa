@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 # Spyder 4.2.5 | Python 3.8.8 64-bit | Qt 5.9.7 | PyQt5 5.9.2 | Darwin 18.7.0
 """
-Contains wrapper functions for fitting regularized regression models (currently
+Contains wrapper functions for fitting regularized regression models.
+
+These wrapper functions implement regularized regression models (currently
 only L2-regularization). Used in the `crossvalidation` module.
 
 @author: Philipp Kaniuth (kaniuth@cbs.mpg.de)

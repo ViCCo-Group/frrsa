@@ -15,7 +15,6 @@ from scipy.spatial.distance import pdist
 
 
 def make_RDM(activity_pattern_matrix, distance='pearson'):
-    # TODO: implement for multiple matrices.
     """Compute dissimilarity matrix.
 
     Parameters
