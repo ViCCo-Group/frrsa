@@ -2,29 +2,28 @@
 
 # frrsa
 
-This projects provides an algorithm which builds on Representational Similarity Analysis (RSA). The classical approach of RSA is to correlate two Representational Dissimilarity Matrices (RDM), in which each cell gives a measure of how dissimilar two conditions are represented by a given system (e.g., the human brain or a deep neural network (DNN)). However, this might underestimate the true relationship between the systems, since it assumes that all measurement channels (e.g., fMRI voxel or DNN units) contribute equally to the establishment of stimulus-pair dissimilarity, and in turn, to correspondence between RDMs. Feature-reweighted RSA (FRRSA) deploys regularized regression techniques (currently: L2-regularization) to maximize the fit between two RDMs; the RDM's cells of one system are explained by a linear reweighted combination of the dissimilarities of the respective stimuli in all measurement channels of the other system. Importantly, every measurement channel of the predicting system receives its own weight. This all is implemented in a nested cross-validation, which avoids overfitting on the level of (hyper-)parameters. 
+This repository provides a Python package to run Feature-Reweighted Representational Similarity Analysis (FR-RSA). The classical approach of Representational Similarity Analysis (RSA) is to correlate two Representational  Matrices, in which each cell gives a measure of how (dis-)similar two conditions are represented by a given system (e.g., the human brain or a model like a deep neural network (DNN)). However, this might underestimate the true correspondence between the systems' representational spaces, since it assumes that all features (e.g., fMRI voxel or DNN units) contribute equally to the establishment of stimulus-pair (dis-)similarity, and in turn, to correspondence between representational matrices. FR-RSA deploys regularized regression techniques (currently: L2-regularization) to maximize the fit between two representational matrices. The core idea behind FR-RSA is to recover a subspace of the predicting matrix that best fits to the target matrix. To do so, the matrices' cells of one system are explained by a linear reweighted combination of the (dis-)similarities of the respective stimuli in all features of the other system. Importantly, every feature of the predicting system receives its own weight. This all is implemented in a nested cross-validation, which avoids overfitting on the level of (hyper-)parameters.
 
 
 ## Getting Started
 
 ### Prerequisites
-FRRSA is written in Python 3 using the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section). You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml).
+The package is written in Python 3 using the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section). You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml) which you should use to create an Anaconda environment.
 
 ### Installing
 
 
 ### How to use
-See [ffrsa/test.py](https://github.com/PhilippKaniuth/frrsa/blob/master/frrsa/test.py) for a simple demonstration.
+See [frrsa/test.py](https://github.com/PhilippKaniuth/frrsa/blob/master/frrsa/test.py) for a simple demonstration of how to use the package.
 
-Just import the main function and call it.
+Just import the main function and call it with your loaded matrices.
 
 ```py
 from fitting.crossvalidation import frrsa
 
-# load your "target" RDM
+# load your "target" RDM or RSM.
 # load your "predictor" data.
-# set the "preprocess" flag.
-# set the "nonnegative" flag.
+# set the necessary flags ("preprocess", "nonnegative", "distance", ...)
 
 predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   predictor, 
@@ -44,18 +43,23 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
 
 
 ## FAQ
-#### _How does my data have to look like to use the FRRSA algorithm?_
-At present, the algorithm expects data of two systems (e.g., a specific DNN layer and a brain region measured with fMRI) the representational spaces of which ought to be compared. The predicting system, that is, the one of which the features ought to be reweighted, is expected to be a _p_ x _k_ matrix. The target system contributes its full RDM in the form of a _k_ x _k_ matrix (where `p:=Number of measurement channels` and `k:=Number of conditions` see [Diedrichsen & Kriegeskorte, 2017](https://dx.plos.org/10.1371/journal.pcbi.1005508)). There are no hard-coded limits on the size of each dimension; however, the bigger _k_ and _p_ become, the larger becomes the computational problem to solve.
-#### _FRRSA uses regularization. Which kinds of regularization regimes are implemented?_
+#### _How does my data have to look like to use the FR-RSA package?_
+At present, the package expects data of two systems (e.g., a specific DNN layer and a brain region measured with fMRI) the representational spaces of which ought to be compared. The predicting system, that is, the one of which the features shall be reweighted, is expected to be a _p_ x _k_ numpy array. The target system contributes its full RDM in the form of a _k_ x _k_ numpy array (where `p:=Number of measurement channels aka features` and `k:=Number of conditions` see [Diedrichsen & Kriegeskorte, 2017](https://dx.plos.org/10.1371/journal.pcbi.1005508)). There are no hard-coded *upper* limits on the size of each dimension; however, the bigger _k_ and _p_ become, the larger becomes the computational problem to solve. See [Known issues](https://github.com/ViCCo-Group/frrsa#known-issues) for a *lower* limit of _k_.
+#### _You say that every feature gets its own weight - can those weights take on any value or are they restricted to be non-negative?_
+You can decide this yourself! The function's parameter `nonnegative` can be set to either `True` or `False` and forces weights to be nonnegative (or not), accordingly.
+#### _What about the _*co*variances_ / interactive effects between predicting features?
+The predictive effect of the interaction between features is not modelled.
+#### _FR-RSA uses regularization. Which kinds of regularization regimes are implemented?_
 As of now, only L2-regularization aka Ridge Regression.
 #### _You say ridge regression; which hyperparameter space should I check?_
-We implemented the L2-regularization using Fractional Ridge Regression (FRR; [Rokem & Kay, 2020](https://pubmed.ncbi.nlm.nih.gov/33252656/)). One advantage of FRR is that the hyperparameter to be optimized is the fraction between ordinary least squares and L2-regularized regression coefficients, which ranges between 0 and 1. Hence, FRR allows assessing the full range of possible regularization parameters. In the context of FRRSA, twenty evenly spaced values between 0.1 and 1 are pre-set. If you want to specify custom regularization values that ought to be assessed, you are able to do so by providing a list of candidate values as the `hyperparams` argument of the frrsa function.
+If you set the parameter `nonnegative` to `False`, L2-regularization is implemented using Fractional Ridge Regression (FRR; [Rokem & Kay, 2020](https://pubmed.ncbi.nlm.nih.gov/33252656/)). One advantage of FRR is that the hyperparameter to be optimized is the fraction between ordinary least squares and L2-regularized regression coefficients, which ranges between 0 and 1. Hence, FRR allows assessing the full range of possible regularization parameters. In the context of FR-RSA, twenty evenly spaced values between 0.1 and 1 are pre-set. If you want to specify custom regularization values that shall be assessed, you are able to do so by providing a list of candidate values as the `hyperparams` argument of the frrsa function.
+If you set the parameter `nonnegative` to `True`,  L2-regularization is currently implemented using Scikit-Learn functions. They have the disadvantage that one has to define the hyperparameter space oneself, which can be tricky. If you do not provide hyerparameter candidates yourself, [14 pre-set values](https://github.com/ViCCo-Group/frrsa/blob/0b6d7ab35d9eb6962bc6a4eeabfb2b8e345a9969/frrsa/fitting/crossvalidation.py#L142) will be used which *might* be sufficient (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)).
 #### _What else? What objects does the function return? Are there other parameters I can specify when running FR-RSA?_
-There are default values for all parameters, which we partly assessed (see our preprint). However, you can input custom parameters as you wish. See the respective docstring for an explanation of all returned objects.
+There are default values for all parameters, which we partly assessed (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)). However, you can input custom parameters as you wish. See the respective docstring for an explanation of all returned objects. A more elaborate documentation is work in progress, see [#14](/../../issues/14).
 
 
 ## Known issues
-Note that the data (i.e. `target` and `predictor`) are split along the condition dimension to conduct a nested cross-validation. Therefore, there exists a logical lower bound regarding the number of different conditions, _k_, below which `frrsa` cannot be executed succesfully. Below this bound, inner test folds occur that contain data from just two conditions, which leads to just one predicted dissimilarity (for one condition pair). However, to determine the goodness-of-fit, the predicted dissimilarities of each cross-validation are _correlated_ with the respective target dissimilarities. This does not work with vectors that have a length < 2.
+Note that the data (i.e. `target` and `predictor`) are split along the condition dimension to conduct a nested cross-validation. Therefore, there exists a logical lower bound regarding the number of different conditions, _k_, below which `frrsa` cannot be executed succesfully. Below this bound, inner test folds occur that contain data from just two conditions, which leads to just one predicted dissimilarity (for one condition pair). However, to determine the goodness-of-fit, currently the predicted dissimilarities of each cross-validation are _correlated_ with the respective target dissimilarities. This does not work with vectors that have a length < 2.
 
 The exact lower bound depends on the values set for `outer_k` and `splitter`. 
 
@@ -63,7 +67,7 @@ If `outer_k=5` and `splitter='random'` (the default values for these parameters)
 
 If `outer_k=5` and `splitter='kfold'`, the lower sufficient size of _k_ is 19. If `splitter='kfold'`, `data_splitter` uses [klearn.model_selection.RepeatedKFold](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RepeatedKFold.html) which does not allow to specifically set the size of the test fold. Therefore, when _k_ is 19, at least data of 15 conditions enter the inner cross-validation, which leads to inner test folds with 3 conditions. However, if _k_ is 18, only data of 14 conditions enter the inner cross-validation, which leads to some inner test folds with data from only 2 conditions.
 
-With different values for `outer_k` the lower bound of _k_ changes accordingly. An automatic check of the parameters and a custom warning are work in progress see [#17](/../../issues/17).
+With different values for `outer_k` the lower bound of _k_ changes accordingly. An automatic check of the parameters with a respective custom warning are work in progress see [#17](/../../issues/17), as might be fixing this situation altogether [#22](/../../issues/22)
 
 
 ## Authors
