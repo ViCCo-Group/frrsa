@@ -11,10 +11,10 @@ from numpy.random import default_rng
 from fitting.crossvalidation import frrsa
 rng = default_rng(seed=4)
 
-# Simulate target RDM and predictor data.
-n_channels = 100  # How many measurement channels?
+# Simulate target Representational Matrix and predictor data.
+n_channels = 100  # How many features?
 n_conditions = 50  # How many conditions?
-n_targets = 2  # How many different target RDMs?
+n_targets = 2  # How many different target matrices?
 target = rng.integers(low=0, high=100, size=(n_conditions, n_conditions, n_targets))
 predictor = rng.integers(low=0, high=100, size=(n_channels, n_conditions))
 
@@ -30,7 +30,7 @@ score_type = 'pearson'
 betas_wanted = True
 predictions_wanted = True
 parallel = True
-rng_state = 1
+rng_state = None
 
 # Call the main funtion and enjoy the output.
 predicted_RDM, predictions, scores, betas = frrsa(target,
