@@ -11,7 +11,7 @@ This repository provides a Python package to run Feature-Reweighted Representati
 The package is written in Python 3 using the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section). You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml) which you should use to create an Anaconda environment.
 
 ### Installing
-For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`).
+For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`). Then, you could set up via Python:
 
 ```py
 import os
