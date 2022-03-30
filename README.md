@@ -11,15 +11,26 @@ This repository provides a Python package to run Feature-Reweighted Representati
 The package is written in Python 3 using the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section). You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml) which you should use to create an Anaconda environment.
 
 ### Installing
+For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`).
 
+```py
+import os
+top_folder = "/User/desired/top/folder/frrsa"
+os.system(f'git clone https://github.com/ViCCo-Group/frrsa.git {top_folder}')
+# create Anaconda environment.
+# activate Anaconda environment.
+```
 
 ### How to use
 See [frrsa/test.py](https://github.com/PhilippKaniuth/frrsa/blob/master/frrsa/test.py) for a simple demonstration of how to use the package.
 
-Just import the main function and call it with your loaded matrices.
+Activate the Anaconda environment, temporarily append to your Python's sys.path, and then import the main function to call it with your loaded matrices.
 
 ```py
-from fitting.crossvalidation import frrsa
+import sys
+top_folder = "/User/desired/top/folder/frrsa"
+sys.path.append(f'{top_folder}/frrsa')
+from frrsa.fitting.crossvalidation import frrsa
 
 # load your "target" RDM or RSM.
 # load your "predictor" data.
@@ -48,13 +59,13 @@ At present, the package expects data of two systems (e.g., a specific DNN layer 
 #### _You say that every feature gets its own weight - can those weights take on any value or are they restricted to be non-negative?_
 The function's parameter `nonnegative` can be set to either `True` or `False` and forces weights to be nonnegative (or not), accordingly.
 #### _What about the covariances / interactive effects between predicting features?_
-The predictive effect of the interaction between features is not modelled.
+One may argue that it could be the case that the interaction of (dis-)similarities from two or more features in one system could help in the prediction of overall (dis-)similarity in another system. Currently, though, feature reweighting does not take into account these interaction terms (nor does classical RSA), which might also be computationally too expensive for predicting systems with a lot of features (e.g. early DNN layers).
 #### _FR-RSA uses regularization. Which kinds of regularization regimes are implemented?_
 As of now, only L2-regularization aka Ridge Regression.
 #### _You say ridge regression; which hyperparameter space should I check?_
 If you set the parameter `nonnegative` to `False`, L2-regularization is implemented using Fractional Ridge Regression (FRR; [Rokem & Kay, 2020](https://pubmed.ncbi.nlm.nih.gov/33252656/)). One advantage of FRR is that the hyperparameter to be optimized is the fraction between ordinary least squares and L2-regularized regression coefficients, which ranges between 0 and 1. Hence, FRR allows assessing the full range of possible regularization parameters. In the context of FR-RSA, twenty evenly spaced values between 0.1 and 1 are pre-set. If you want to specify custom regularization values that shall be assessed, you are able to do so by providing a list of candidate values as the `hyperparams` argument of the frrsa function. <br/> If you set the parameter `nonnegative` to `True`,  L2-regularization is currently implemented using Scikit-Learn functions. They have the disadvantage that one has to define the hyperparameter space oneself, which can be tricky. If you do not provide hyerparameter candidates yourself, [14 pre-set values](https://github.com/ViCCo-Group/frrsa/blob/0b6d7ab35d9eb6962bc6a4eeabfb2b8e345a9969/frrsa/fitting/crossvalidation.py#L142) will be used which *might* be sufficient (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)).
 #### _What else? What objects does the function return? Are there other parameters I can specify when running FR-RSA?_
-There are default values for all parameters, which we partly assessed (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)). However, you can input custom parameters as you wish. For now, see the [respective docstring](https://github.com/ViCCo-Group/frrsa/blob/0008ba45c44ac469624b99175672f241696c0b3a/frrsa/fitting/crossvalidation.py#L48) for an explanation of all returned objects. A more elaborate documentation is work in progress, see [#14](/../../issues/14).
+There are default values for all parameters, which we partly assessed (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)). However, you can input custom parameters as you wish. For now, see the [respective docstring](https://github.com/ViCCo-Group/frrsa/blob/0008ba45c44ac469624b99175672f241696c0b3a/frrsa/fitting/crossvalidation.py#L48) for an explanation of all returned objects. A more elaborate documentation is work in progress (see [#14](/../../issues/14)).
 
 
 ## Known issues
@@ -66,7 +77,7 @@ If `outer_k=5` and `splitter='random'` (the default values for these parameters)
 
 If `outer_k=5` and `splitter='kfold'`, the lower sufficient size of _k_ is 19. If `splitter='kfold'`, `data_splitter` uses [klearn.model_selection.RepeatedKFold](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RepeatedKFold.html) which does not allow to specifically set the size of the test fold. Therefore, when _k_ is 19, at least data of 15 conditions enter the inner cross-validation, which leads to inner test folds with 3 conditions. However, if _k_ is 18, only data of 14 conditions enter the inner cross-validation, which leads to some inner test folds with data from only 2 conditions.
 
-With different values for `outer_k` the lower bound of _k_ changes accordingly. An automatic check of the parameters with a respective custom warning is work in progress see [#17](/../../issues/17), as might be fixing this situation altogether [#22](/../../issues/22).
+With different values for `outer_k` the lower bound of _k_ changes accordingly. An automatic check of the parameters with a respective custom warning is work in progress (see [#17](/../../issues/17)), as might be fixing this situation altogether (see [#22](/../../issues/22)).
 
 
 ## Authors
