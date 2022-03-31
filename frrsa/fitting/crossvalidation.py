@@ -212,8 +212,11 @@ def frrsa(target,
     if predictions_wanted:
         predictions = pd.DataFrame(data=np.delete(predictions, 0, 0),
                                    columns=['dissim_target', 'dissim_predicted', 'target', 'fold', 'first_obj', 'second_obj'])
-        if (nonnegative is False) & (distance == 'sqeuclidean'):
+        if (distance == 'sqeuclidean') & (nonnegative is False):
             predictions.loc[predictions['dissim_predicted'] < 0, 'dissim_predicted'] = 0
+        elif (distance == 'pearson'):
+            predictions.loc[predictions['dissim_predicted'] < -1, 'dissim_predicted'] = -1
+            predictions.loc[predictions['dissim_predicted'] > 1, 'dissim_predicted'] = 1
     else:
         predictions = None
 
