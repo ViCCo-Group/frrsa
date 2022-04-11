@@ -59,7 +59,7 @@ At present, the package expects data of two systems (e.g., a specific DNN layer 
 #### _You say that every feature gets its own weight - can those weights take on any value or are they restricted to be non-negative?_
 The function's parameter `nonnegative` can be set to either `True` or `False` and forces weights to be nonnegative (or not), accordingly.
 #### _What about the covariances / interactive effects between predicting features?_
-One may argue that it could be the case that the interaction of (dis-)similarities from two or more features in one system could help in the prediction of overall (dis-)similarity in another system. Currently, though, feature reweighting does not take into account these interaction terms (nor does classical RSA), which might also be computationally too expensive for predicting systems with a lot of features (e.g. early DNN layers).
+One may argue that it could be the case that the interaction of (dis-)similarities in two or more features in one system could help in the prediction of overall (dis-)similarity in another system. Currently, though, feature reweighting does not take into account these interaction terms (nor does classical RSA), which might also be computationally too expensive for predicting systems with a lot of features (e.g. early DNN layers).
 #### _FR-RSA uses regularization. Which kinds of regularization regimes are implemented?_
 As of now, only L2-regularization aka Ridge Regression.
 #### _You say ridge regression; which hyperparameter space should I check?_
