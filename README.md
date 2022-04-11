@@ -96,7 +96,7 @@ If you use `frrsa` (or any of its modules), please cite our [associated preprint
         pages = {2021.09.27.462005},
         year = {2021},
         doi = {10.1101/2021.09.27.462005},
-        URL = {https://www.biorxiv.org/content/10.1101/2021.09.27.462005v2}
+        URL = {https://www.biorxiv.org/content/10.1101/2021.09.27.462005v3}
 }
 ```
 
