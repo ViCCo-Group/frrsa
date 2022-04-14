@@ -9,7 +9,6 @@ Contains function to perform classical Representational Similarity Analysis.
 
 from functools import partial
 import numpy as np
-from scipy.stats import spearmanr, pearsonr
 from scipy.spatial.distance import squareform
 from scipy.spatial.distance import pdist
 
@@ -62,4 +61,3 @@ def flatten_RDM(rdm: np.ndarray) -> np.ndarray:
     elif rdm.ndim == 2:
         rdv = rdm[np.triu_indices(rdm.shape[0], k=1)].reshape(-1, 1)
     return rdv
-
