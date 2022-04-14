@@ -1,6 +1,6 @@
 import unittest
 
-from frrsa.helper.classical_RSA import make_RDM, flatten_RDM, correlate_RDMs
+from frrsa.helper.classical_RSA import make_RDM, flatten_RDM
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -51,17 +51,3 @@ class TestFlattenRDM(unittest.TestCase):
                                  [0.6, 0.9]])
         assert_allclose(expected_rdv, rdv)
 
-class TestCorrelateRDMs(unittest.TestCase):
-    def test_pearson(self):
-        rdv1 = np.array([0.6, 0.7, 0.8])
-        rdv2 = np.array([0.6, 0.7, 0.8])
-        corr, p = correlate_RDMs(rdv1, rdv2, score_type='pearson')
-        expected_corr = 1
-        self.assertEqual(corr, expected_corr)
-
-    def test_spearman(self):
-        rdv1 = np.array([0.6, 0.7, 0.8])
-        rdv2 = np.array([0.6, 0.7, 0.8])
-        corr, p = correlate_RDMs(rdv1, rdv2, score_type='spearman')
-        expected_corr = 1
-        self.assertEqual(corr, expected_corr)
