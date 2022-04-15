@@ -172,7 +172,15 @@ def frrsa(target,
         n_targets = 1
 
     if n_conditions < 9:
-        raise Exception(f'There must at least be 9 conditions, your data only has {n_conditions}.')
+        raise Exception(f'There must at least be 9 conditions to execute frrsa, \
+                        your data only has {n_conditions}.')
+
+    if not (n_conditions / outer_k > 2):
+        print('The combination of your data\'s number of conditions and your choice for "outer_k" would break this algorithm.')
+        while not (n_conditions / outer_k > 2):
+            outer_k -= 1
+        print(f'Therefore, "outer_k" is adjusted... to {outer_k}! Hence, an outer {outer_reps} times repeated {outer_k}-fold cross-validation will be carried out now.')
+        print(f'If you have more than 14 conditions, this could take much longer than a 5-fold cross-validation. You might want to abort and provide an "outer_k" that is a bit smaller than {outer_k}. The algorithm is proceeding now.')
 
     if preprocess:
         if distance == 'pearson':
@@ -654,6 +662,15 @@ def start_inner_cross_validation(splitter,
     """
     n_hyperparams = len(hyperparams)
     inner_k, inner_reps = 5, 5
+
+    n_conditions = len(outer_train_indices)
+
+    if not (n_conditions / inner_k > 2):
+        print('The inner cross-validation had to be adjusted because your data has so few conditions.')
+        while not (n_conditions / inner_k > 2):
+            inner_k -= 1
+        print(f'It is now a {inner_reps} times repeated {inner_k}-fold CV.')
+
     inner_cv = data_splitter(splitter, inner_k, inner_reps, rng_state)
     inner_hyperparams_scores = np.empty((n_hyperparams, n_targets, (inner_k * inner_reps)))
     # Note: In the following loop, rkf.split is applied to the outer_train_indices!
