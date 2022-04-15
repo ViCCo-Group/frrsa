@@ -15,7 +15,7 @@ rng = default_rng(seed=4)
 n_channels = 100  # How many features?
 n_conditions = 50  # How many conditions?
 n_targets = 2  # How many different target matrices?
-target = rng.integers(low=0, high=100, size=(n_conditions, n_conditions, n_targets))
+target = rng.integers(low=-1, high=1, size=(n_conditions, n_conditions, n_targets))
 predictor = rng.integers(low=0, high=100, size=(n_channels, n_conditions))
 
 # Set the main function's parameters.
