@@ -171,6 +171,9 @@ def frrsa(target,
     except IndexError:
         n_targets = 1
 
+    if n_conditions < 9:
+        raise Exception(f'There must at least be 9 conditions, your data only has {n_conditions}.')
+
     if preprocess:
         if distance == 'pearson':
             z_scale = StandardScaler(copy=False, with_mean=True, with_std=True)
