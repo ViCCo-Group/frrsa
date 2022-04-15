@@ -38,7 +38,7 @@ hyperparams = None
 score_type = 'pearson'
 betas_wanted = True
 predictions_wanted = True
-parallel = True
+parallel = False
 rng_state = None
 
 # Call the main funtion and enjoy the output.
