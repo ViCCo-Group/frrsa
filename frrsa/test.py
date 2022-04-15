@@ -6,17 +6,27 @@ Demonstration script for running 'frrsa'.
 
 @author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
 """
-
+import sys
 from numpy.random import default_rng
 from fitting.crossvalidation import frrsa
-rng = default_rng(seed=4)
+
+# Uncomment the two lines below and change 'top_folder' to where you have downloaded frrsa.
+# top_folder = "/User/desired/top/folder/frrsa"
+# sys.path.append(f'{top_folder}/frrsa')
 
 # Simulate target Representational Matrix and predictor data.
+rng = default_rng()
 n_channels = 100  # How many features?
 n_conditions = 50  # How many conditions?
 n_targets = 2  # How many different target matrices?
-target = rng.integers(low=-1, high=1, size=(n_conditions, n_conditions, n_targets))
-predictor = rng.integers(low=0, high=100, size=(n_channels, n_conditions))
+
+target_low = -1
+target_high = 1
+target = (target_high - target_low) * rng.random(size=(n_conditions, n_conditions, n_targets)) + target_low
+
+predictor_low = 0
+predictor_high = 100
+predictor = (predictor_high - predictor_low) * rng.random(size=(n_channels, n_conditions)) + predictor_low
 
 # Set the main function's parameters.
 preprocess = True
