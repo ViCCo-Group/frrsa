@@ -38,7 +38,6 @@ def frrsa(target,
           distance='pearson',
           outer_k=5,
           outer_reps=10,
-          splitter='random',
           hyperparams=None,
           score_type='pearson',
           betas_wanted=False,
@@ -135,6 +134,8 @@ def frrsa(target,
         (n_conditions, n_targets). Note that the first weight for each target is
         not a channel-weight but an offset.
     """
+    splitter = 'random'
+
     if hyperparams is None:
         if not nonnegative:
             hyperparams = np.linspace(.05, 1, 20)

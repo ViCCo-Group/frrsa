@@ -24,7 +24,6 @@ nonnegative = False
 distance = 'pearson'
 outer_k = 5
 outer_reps = 1
-splitter = 'random'
 hyperparams = None
 score_type = 'pearson'
 betas_wanted = True
@@ -40,7 +39,6 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   distance,
                                                   outer_k,
                                                   outer_reps,
-                                                  splitter,
                                                   hyperparams,
                                                   score_type,
                                                   betas_wanted,
