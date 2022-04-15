@@ -790,11 +790,11 @@ def fit_and_score(predictor,
         y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng_state)
     elif place == 'out':
         y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, rng_state)
-    if distance == 'sqeuclidean':
-        y_pred[y_pred < 0] = 0
-    elif distance == 'pearson':
-        y_pred[y_pred < -1] = -1
-        y_pred[y_pred > 1] = 1
+    # if distance == 'sqeuclidean':
+    #     y_pred[y_pred < 0] = 0
+    # elif distance == 'pearson':
+    #     y_pred[y_pred < -1] = -1
+    #     y_pred[y_pred > 1] = 1
     score = scoring(y_test, y_pred, score_type=score_type)
     return score, first_pair_idx, second_pair_idx, y_pred, y_test
 
