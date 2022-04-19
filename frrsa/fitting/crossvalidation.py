@@ -43,7 +43,7 @@ def frrsa(target,
           score_type='pearson',
           betas_wanted=False,
           predictions_wanted=False,
-          parallel=False,
+          parallel='1',
           rng_state=None):
     """Conduct repeated, nested, cross-validated FR-RSA.
 
@@ -92,9 +92,9 @@ def frrsa(target,
     predictions_wanted : bool, optional
         Indication of whether predicticted dissimilarities for all outer
         cross-validations shall be returned (defaults to `False`).
-    parallel : bool, optional
-        Indication of whether to parallelize the outer cross-validation,
-        using all of the machine's CPUs cores (defaults to `False`).
+    parallel : str, optional
+        Number of parallel jobs to parallelize the outer cross-validation,
+        `max` would lead to using all of the machine's CPUs cores (defaults to `1`).
     rng_state : int, optional
         State of the randomness in the system (defaults to `None`). Should only
         be set for testing purposes, will be deprecated in release-version.
@@ -186,6 +186,11 @@ def frrsa(target,
     classical_scores['RSA_kind'] = 'classical'
 
     n_outer_cvs = outer_k * outer_reps
+
+    if parallel == 'max':
+        parallel = psutil.cpu_count(logical=False)
+    else:
+        parallel = int(parallel)
 
     predictions, score, fold, hyperparameter, predicted_RDM, \
         predicted_RDM_counter = start_outer_cross_validation(n_conditions,
@@ -291,9 +296,8 @@ def start_outer_cross_validation(n_conditions,
         The hyperparameter candidates to evaluate in the regularization scheme
     n_outer_cvs : int
         Denotes how many outer crossvalidations are conducted in total.
-    parallel : bool
-        Indication of whether to parallelize the outer cross-validation,
-        using all of the machine's CPUs cores.
+    parallel : int
+        Number of parallel jobs to parallelize the outer cross-validation,
     predictions_wanted : bool
         Indication of whether predicticted dissimilarities for all outer
         cross-validations shall be returned.
@@ -345,15 +349,14 @@ def start_outer_cross_validation(n_conditions,
     results = []
     outer_loop_count = -1
 
-    if parallel:
+    if parallel > 1:
         outer_runs = []
 
         for outer_train_indices, outer_test_indices in outer_cv.split(list_of_indices):
             outer_loop_count += 1
             outer_runs.append([outer_train_indices, outer_test_indices, outer_loop_count])
 
-        number_cores = psutil.cpu_count(logical=False)  # use physical cores.
-        jobs = Parallel(n_jobs=number_cores, prefer='processes')(delayed(run_parallel)(outer_run,
+        jobs = Parallel(n_jobs=parallel, prefer='processes')(delayed(run_parallel)(outer_run,
                                                                                        splitter,
                                                                                        rng_state,
                                                                                        n_targets,
@@ -363,7 +366,7 @@ def start_outer_cross_validation(n_conditions,
                                                                                        target,
                                                                                        predictions_wanted,
                                                                                        distance,
-                                                                                       nonnegative) for outer_run in np.array_split(outer_runs, number_cores))
+                                                                                       nonnegative) for outer_run in np.array_split(outer_runs, parallel))
         for job in jobs:
             results += job
     else:
