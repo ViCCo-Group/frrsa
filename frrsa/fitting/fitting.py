@@ -15,11 +15,7 @@ from pathlib import Path
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
-
-if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
-    from fitting.fracridge import fracridge
-else:
-    from frrsa.frrsa.fitting.fracridge import fracridge
+from fracridge import fracridge
 
 
 def count_targets(y):
