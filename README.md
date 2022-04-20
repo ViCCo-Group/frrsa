@@ -44,8 +44,7 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   cv=[5, 10], 
                                                   hyperparams=None, 
                                                   score_type='pearson', 
-                                                  betas_wanted=False,
-                                                  predictions_wanted=False,
+                                                  wanted=['betas', 'predictions'],
                                                   parallel=False,
                                                   rng_state=None)
 ```                                            
