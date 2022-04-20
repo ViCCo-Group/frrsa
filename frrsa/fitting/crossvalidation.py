@@ -36,12 +36,10 @@ def frrsa(target,
           preprocess,
           nonnegative,
           distance='pearson',
-          outer_k=5,
-          outer_reps=10,
+          cv=[5, 10],
           hyperparams=None,
           score_type='pearson',
-          betas_wanted=False,
-          predictions_wanted=False,
+          wanted=[],
           parallel='1',
           rng_state=None):
     """Conduct repeated, nested, cross-validated FR-RSA.
@@ -71,13 +69,10 @@ def frrsa(target,
         The distance measure used for the predictor RDM (defaults to `pearson`).
         Note that the same distance measure for the predictor RDM is used when
         applying classical and feature-reweighted RSA.
-    outer_k : int, optional
-        The fold size of the outer crossvalidation (defaults to 5).
-    outer_reps : int, optional
-        How often the outer k-fold is repeated (defaults to 10).
-    splitter : {'random', 'kfold'}, optional
-        How the data shall be split (defaults to `random`). If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up.
+    cv : list, optional
+        A list of integers, where the first integer indicates the fold size of
+        the outer crossvalidation and the second integer indicates often the
+        outer k-fold is repeated (defaults to [5, 10]).
     hyperparams : array-like, optional
         The hyperparameter candidates to evaluate in the regularization scheme
         (defaults to `None`). Should be in strictly ascending order.
@@ -85,12 +80,14 @@ def frrsa(target,
     score_type : {'pearson', 'spearman'}, optional
         Type of association measure to compute between predicting and target
         RDMs (defaults to `pearson`).
-    betas_wanted : bool, optional
-        Indication of whether betas for each measurement channel shall be
-        returned (defaults to `False`).
-    predictions_wanted : bool, optional
-        Indication of whether predicticted dissimilarities for all outer
-        cross-validations shall be returned (defaults to `False`).
+    wanted : list, optional
+         A list of strings that indicate which output the user wants the
+         function to return. Possible elements are 'betas' and 'predictions'.
+         If the first string is present, then betas for each measurement
+         channel will be returned. If the second string is present, predicticted
+         (dis-)similarities for all outer cross-validations will be returned.
+         There is no mandatory order of the strings. Defaults to an empty list,
+         i.e. neither betas nor predictions are returned.
     parallel : str, optional
         Number of parallel jobs to parallelize the outer cross-validation,
         `max` would lead to using all of the machine's CPUs cores (defaults to `1`).
@@ -103,7 +100,7 @@ def frrsa(target,
     predicted_RDM_re : ndarray
         The predicted dissimilarities averaged across outer folds with shape
         (n_conditions, n_conditions, n_targets).
-    predictions : pd.DataFrame
+    predictions : pd.DataFrame, optional
         Holds dissimilarities for the target RDMs and for the predicting RDM
         and to which condition pairs they belong, for all folds and targets
         separately. This is a potentially very large object. Only request if
@@ -129,12 +126,21 @@ def frrsa(target,
         RSA_kind        RSA kind (as `str`)
         =============   =============================================================
 
-    betas : pd.DataFrame
+    betas : pd.DataFrame, optional
         Holds the weights for each target's measurement channel with the shape
         (n_conditions, n_targets). Note that the first weight for each target is
         not a channel-weight but an offset.
     """
     splitter = 'random'
+    outer_k, outer_reps = cv
+    if 'betas' in wanted:
+        betas_wanted = True
+    else:
+        betas_wanted = False
+    if 'predictions' in wanted:
+        predictions_wanted = True
+    else:
+        predictions_wanted = False
 
     if hyperparams is None:
         if not nonnegative:

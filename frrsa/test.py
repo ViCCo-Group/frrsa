@@ -32,10 +32,10 @@ predictor = (predictor_high - predictor_low) * rng.random(size=(n_channels, n_co
 preprocess = True
 nonnegative = False
 distance = 'pearson'
-outer_k = 5
-outer_reps = 1
+cv = [5, 1]
 hyperparams = None
 score_type = 'pearson'
+wanted = ['betas', 'predictions']
 betas_wanted = True
 predictions_wanted = True
 parallel = '2'
@@ -47,11 +47,9 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   preprocess,
                                                   nonnegative,
                                                   distance,
-                                                  outer_k,
-                                                  outer_reps,
+                                                  cv,
                                                   hyperparams,
                                                   score_type,
-                                                  betas_wanted,
-                                                  predictions_wanted,
+                                                  wanted,
                                                   parallel,
                                                   rng_state)
