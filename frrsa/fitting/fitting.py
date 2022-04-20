@@ -81,7 +81,7 @@ def prepare_variables(X_train, y_train, X_test=None):
     return X_train_z, z_score.mean_, z_score.scale_, y_train_c, y_train_mean
 
 
-def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng_state):
+def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, random_state):
     """Perform crossvalidated Ridge regression with each candidate hyperparameter.
 
     For each target in `y_train`, Ridge regression is fitted with each candidate
@@ -100,7 +100,7 @@ def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng
         Candidate hyperparameters that shall be evaluated.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
-    rng_state : int
+    random_state : int
         State of the randomness. Should only be set for testing purposes.
 
     Returns
@@ -121,14 +121,14 @@ def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng
         y_predicted = np.zeros((n_samples, n_hyperparams, n_targets))
         for idx, hyperparam in enumerate(hyperparams):
             model = Ridge(alpha=hyperparam, fit_intercept=False, tol=0.001,
-                          solver='lbfgs', positive=True, random_state=rng_state)
+                          solver='lbfgs', positive=True, random_state=random_state)
             model.fit(X_train_z, y_train_c)
             y_predicted[:, idx, :] = model.predict(X_test_z)
     y_predicted += y_train_mean
     return y_predicted
 
 
-def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, rng_state):
+def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, random_state):
     """Perform crossvalidated Ridge regression for each target.
 
     For each target in `y_train`, Ridge Regression is fitted with each target's
@@ -148,7 +148,7 @@ def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative
         Best hyperparameter for each target in `y_train`.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
-    rng_state : int
+    random_state : int
         State of the randomness. Should only be set for testing purposes.
 
     Returns
@@ -171,14 +171,14 @@ def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative
             y_predicted[:, idx] = y_pred_current.reshape(-1, n_current_targets)
     else:
         model = Ridge(alpha=hyperparams, fit_intercept=False, tol=0.001,
-                      solver='lbfgs', positive=True, random_state=rng_state)
+                      solver='lbfgs', positive=True, random_state=random_state)
         model.fit(X_train_z, y_train_c)
         y_predicted = model.predict(X_test_z)
     y_predicted += y_train_mean
     return y_predicted
 
 
-def final_model(X, y, hyperparams, nonnegative, rng_state):
+def final_model(X, y, hyperparams, nonnegative, random_state):
     """Perform Ridge Regression on the whole dataset for each target.
 
     For each target in `y`, Ridge regression is fitted to the whole dataset using
@@ -195,7 +195,7 @@ def final_model(X, y, hyperparams, nonnegative, rng_state):
         Best hyperparameter for each target in `y`.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
-    rng_state : int
+    random_state : int
         State of the randomness. Should only be set for testing purposes.
 
     Returns
@@ -221,7 +221,7 @@ def final_model(X, y, hyperparams, nonnegative, rng_state):
             beta_standardized[:, idx] = beta_standardized_current.reshape(-1, n_current_targets)
     else:
         model = Ridge(alpha=hyperparams, fit_intercept=False, tol=0.001,
-                      solver='lbfgs', positive=True, random_state=rng_state)
+                      solver='lbfgs', positive=True, random_state=random_state)
         model.fit(X_z, y_c)
         beta_standardized = model.coef_.T
     beta_unstandardized = beta_standardized.T / X_stds

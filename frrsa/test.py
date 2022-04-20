@@ -39,7 +39,7 @@ wanted = ['betas', 'predictions']
 betas_wanted = True
 predictions_wanted = True
 parallel = '2'
-rng_state = None
+random_state = None
 
 # Call the main funtion and enjoy the output.
 predicted_RDM, predictions, scores, betas = frrsa(target,
@@ -52,4 +52,4 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   score_type,
                                                   wanted,
                                                   parallel,
-                                                  rng_state)
+                                                  random_state)

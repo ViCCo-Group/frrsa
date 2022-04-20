@@ -41,7 +41,7 @@ def frrsa(target,
           score_type='pearson',
           wanted=[],
           parallel='1',
-          rng_state=None):
+          random_state=None):
     """Conduct repeated, nested, cross-validated FR-RSA.
 
     This high-level wrapper function conducts some preparatory data processing,
@@ -91,9 +91,10 @@ def frrsa(target,
     parallel : str, optional
         Number of parallel jobs to parallelize the outer cross-validation,
         `max` would lead to using all of the machine's CPUs cores (defaults to `1`).
-    rng_state : int, optional
-        State of the randomness in the system (defaults to `None`). Should only
-        be set for testing purposes, will be deprecated in release-version.
+    random_state : int, optional
+        State of the randomness (defaults to `None`). Should only be set for
+        testing purposes. If set, leads to reproducible output across multiple
+        function calls.
 
     Returns
     -------
@@ -213,7 +214,7 @@ def frrsa(target,
     predictions, score, fold, hyperparameter, predicted_RDM, \
         predicted_RDM_counter = start_outer_cross_validation(n_conditions,
                                                              splitter,
-                                                             rng_state,
+                                                             random_state,
                                                              outer_k,
                                                              outer_reps,
                                                              n_targets,
@@ -242,7 +243,7 @@ def frrsa(target,
         idx = list(range(n_conditions))
         X, *_ = compute_predictor_distance(predictor, idx, distance)
         hyperparams = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
-        betas = final_model(X, y_classical, hyperparams, nonnegative, rng_state)
+        betas = final_model(X, y_classical, hyperparams, nonnegative, random_state)
         betas = pd.DataFrame(data=betas,
                              columns=[f'betas_target_{i+1}' for i in range(n_targets)])
     else:
@@ -261,7 +262,7 @@ def frrsa(target,
 
 def start_outer_cross_validation(n_conditions,
                                  splitter,
-                                 rng_state,
+                                 random_state,
                                  outer_k,
                                  outer_reps,
                                  n_targets,
@@ -286,7 +287,7 @@ def start_outer_cross_validation(n_conditions,
     splitter : str
         How the data shall be split. If `random`, data
         is split randomly. If `kfold`, a classical k-fold is set up.
-    rng_state : int
+    random_state : int
         State of the randomness in the system. Should only
         be set for testing purposes, will be deprecated in release-version.
     outer_k : int
@@ -356,7 +357,7 @@ def start_outer_cross_validation(n_conditions,
     if predictions_wanted:
         predictions = np.zeros((1, 6))
 
-    outer_cv = data_splitter(splitter, outer_k, outer_reps, rng_state)
+    outer_cv = data_splitter(splitter, outer_k, outer_reps, random_state)
     list_of_indices = list(range(n_conditions))
 
     results = []
@@ -371,7 +372,7 @@ def start_outer_cross_validation(n_conditions,
 
         jobs = Parallel(n_jobs=parallel, prefer='processes')(delayed(run_parallel)(outer_run,
                                                                                        splitter,
-                                                                                       rng_state,
+                                                                                       random_state,
                                                                                        n_targets,
                                                                                        score_type,
                                                                                        hyperparams,
@@ -387,7 +388,7 @@ def start_outer_cross_validation(n_conditions,
             outer_loop_count += 1
             current_predictions, y_regularized, first_pair_obj, second_pair_obj, \
                 regularized_score, best_hyperparam = run_outer_cross_validation_batch(splitter,
-                                                                                      rng_state,
+                                                                                      random_state,
                                                                                       n_targets,
                                                                                       outer_train_indices,
                                                                                       score_type,
@@ -422,7 +423,7 @@ def start_outer_cross_validation(n_conditions,
 
 
 def run_outer_cross_validation_batch(splitter,
-                                     rng_state,
+                                     random_state,
                                      n_targets,
                                      outer_train_indices,
                                      score_type,
@@ -445,7 +446,7 @@ def run_outer_cross_validation_batch(splitter,
     splitter : str
         How the data shall be split. If `random`, data
         is split randomly. If `kfold`, a classical k-fold is set up.
-    rng_state : int
+    random_state : int
         State of the randomness in the system. Should only
         be set for testing purposes, will be deprecated in release-version.
     n_targets : int
@@ -497,7 +498,7 @@ def run_outer_cross_validation_batch(splitter,
     """
     # print("Check")
     inner_hyperparams_scores = start_inner_cross_validation(splitter,
-                                                            rng_state,
+                                                            random_state,
                                                             n_targets,
                                                             outer_train_indices,
                                                             predictor,
@@ -520,7 +521,7 @@ def run_outer_cross_validation_batch(splitter,
                                               distance,
                                               place,
                                               nonnegative,
-                                              rng_state)
+                                              random_state)
 
     first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
                                       outer_test_indices[second_pair_idx]
@@ -545,7 +546,7 @@ def run_outer_cross_validation_batch(splitter,
 
 def run_parallel(outer_run,
                  splitter,
-                 rng_state,
+                 random_state,
                  n_targets,
                  score_type,
                  hyperparams,
@@ -565,7 +566,7 @@ def run_parallel(outer_run,
     splitter : str
         How the data shall be split. If `random`, data
         is split randomly. If `kfold`, a classical k-fold is set up.
-    rng_state : int
+    random_state : int
         State of the randomness in the system. Should only
         be set for testing purposes, will be deprecated in release-version.
     n_targets : int
@@ -602,7 +603,7 @@ def run_parallel(outer_run,
         outer_loop_count = batch[2]
         current_predictions, y_regularized, first_pair_obj, second_pair_obj, \
             regularized_score, best_hyperparam = run_outer_cross_validation_batch(splitter,
-                                                                                  rng_state,
+                                                                                  random_state,
                                                                                   n_targets,
                                                                                   outer_train_indices,
                                                                                   score_type,
@@ -620,7 +621,7 @@ def run_parallel(outer_run,
 
 
 def start_inner_cross_validation(splitter,
-                                 rng_state,
+                                 random_state,
                                  n_targets,
                                  outer_train_indices,
                                  predictor,
@@ -639,7 +640,7 @@ def start_inner_cross_validation(splitter,
     splitter : str
         How the data shall be split. If `random`, data
         is split randomly. If `kfold`, a classical k-fold is set up.
-    rng_state : int
+    random_state : int
         State of the randomness in the system. Should only
         be set for testing purposes, will be deprecated in release-version.
     n_targets : int
@@ -680,7 +681,7 @@ def start_inner_cross_validation(splitter,
             inner_k -= 1
         print(f'It is now a {inner_reps} times repeated {inner_k}-fold CV.')
 
-    inner_cv = data_splitter(splitter, inner_k, inner_reps, rng_state)
+    inner_cv = data_splitter(splitter, inner_k, inner_reps, random_state)
     inner_hyperparams_scores = np.empty((n_hyperparams, n_targets, (inner_k * inner_reps)))
     # Note: In the following loop, rkf.split is applied to the outer_train_indices!
     inner_loop_count = -1
@@ -688,7 +689,7 @@ def start_inner_cross_validation(splitter,
     for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
         inner_loop_count += 1
         train_idx, test_idx = outer_train_indices[inner_train_indices], outer_train_indices[inner_test_indices]
-        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, distance, place, nonnegative, rng_state)
+        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, distance, place, nonnegative, random_state)
         inner_hyperparams_scores[:, :, inner_loop_count] = score_in
     return inner_hyperparams_scores
 
@@ -764,7 +765,7 @@ def fit_and_score(predictor,
                   distance,
                   place,
                   nonnegative,
-                  rng_state):
+                  random_state):
     """Fit regularized regression and get its predictions and scores.
 
     Parameters
@@ -791,7 +792,7 @@ def fit_and_score(predictor,
         Indication of whether this function is applied in inner our outer crossvalidation.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
-    rng_state : int
+    random_state : int
         State of the randomness in the system. Should only
         be set for testing purposes, will be deprecated in release-version.
 
@@ -816,9 +817,9 @@ def fit_and_score(predictor,
     y_train = flatten_RDM(target[np.ix_(train_idx, train_idx)])
     y_test = flatten_RDM(target[np.ix_(test_idx, test_idx)])
     if place == 'in':
-        y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, rng_state)
+        y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, random_state)
     elif place == 'out':
-        y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, rng_state)
+        y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, random_state)
     # if distance == 'sqeuclidean':
     #     y_pred[y_pred < 0] = 0
     # elif distance == 'pearson':
