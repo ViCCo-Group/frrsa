@@ -18,16 +18,16 @@ from sklearn.preprocessing import StandardScaler, normalize
 from joblib import Parallel, delayed
 
 if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
-    from helper.classical_RSA import flatten_RDM, make_RDM
+    from helper.classical_RSA import flatten_RDM#, make_RDM
     from helper.data_splitter import data_splitter
     from helper.predictor_distance import hadamard, sqeuclidean
-    from fitting.scoring import scoring, scoring_classical
+    from fitting.scoring import scoring#, scoring_classical
     from fitting.fitting import regularized_model, find_hyperparameters, final_model
 else:
-    from frrsa.frrsa.helper.classical_RSA import flatten_RDM, make_RDM
+    from frrsa.frrsa.helper.classical_RSA import flatten_RDM#, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
     from frrsa.frrsa.helper.predictor_distance import hadamard, sqeuclidean
-    from frrsa.frrsa.fitting.scoring import scoring, scoring_classical
+    from frrsa.frrsa.fitting.scoring import scoring#, scoring_classical
     from frrsa.frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
 
 
@@ -105,7 +105,7 @@ def frrsa(target,
         Holds dissimilarities for the target RDMs and for the predicting RDM
         and to which condition pairs they belong, for all folds and targets
         separately. This is a potentially very large object. Only request if
-        you really need it. Data columns are as follows:
+        you really need it. Columns are as follows:
 
         ================   ================================================================
         dissim_target      Dissimilarities for the target RDMs' condition pairs (as `float`)
@@ -117,14 +117,12 @@ def frrsa(target,
         ================   ================================================================
 
     scores : pd.DataFrame
-        Holds the scores, that is, the representational correspondence between
-        each target RDM and the predicting RDM, for classical and
-        feature-reweighted RSA, for each target.
+        Holds the the representational correspondency scores between each target
+        and the predictor, for feature-reweighted RSA. Columns are as follows:
 
         =============   =============================================================
         target          Target to which scores belong (as `int`)
         scores          Correspondence between predicting and target RMD (as `float`)
-        RSA_kind        RSA kind (as `str`)
         =============   =============================================================
 
     betas : pd.DataFrame, optional
@@ -196,13 +194,13 @@ def frrsa(target,
         elif distance == 'sqeuclidean':
             predictor = normalize(predictor, norm='l2', axis=0)
 
-    y_classical = flatten_RDM(target)
-    x_classical = flatten_RDM(make_RDM(predictor, distance))
+    # y_classical = flatten_RDM(target)
+    # x_classical = flatten_RDM(make_RDM(predictor, distance))
 
-    classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
-    classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
-    classical_scores['target'] = list(range(n_targets))
-    classical_scores['RSA_kind'] = 'classical'
+    # classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
+    # classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
+    # classical_scores['target'] = list(range(n_targets))
+    # classical_scores['RSA_kind'] = 'classical'
 
     n_outer_cvs = outer_k * outer_reps
 
@@ -230,7 +228,7 @@ def frrsa(target,
 
     # 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
-    reweighted_scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T,
+    scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T,
                                      columns=['score', 'fold', 'hyperparameter', 'target'])
 
     if predictions_wanted:
@@ -242,7 +240,8 @@ def frrsa(target,
     if betas_wanted:
         idx = list(range(n_conditions))
         X, *_ = compute_predictor_distance(predictor, idx, distance)
-        hyperparams = reweighted_scores.groupby(['target'])['hyperparameter'].mean()
+        hyperparams = scores.groupby(['target'])['hyperparameter'].mean()
+        y_classical = flatten_RDM(target)
         betas = final_model(X, y_classical, hyperparams, nonnegative, random_state)
         betas = pd.DataFrame(data=betas,
                              columns=[f'betas_target_{i+1}' for i in range(n_targets)])
@@ -251,11 +250,11 @@ def frrsa(target,
 
     # Average reweighted scores across outer CVs. For this, the correlations
     # need to be Fisher's z-transformed and backtransformed after.
-    reweighted_scores['score'] = reweighted_scores['score'].apply(np.arctanh)
-    reweighted_scores = reweighted_scores.groupby(['target'])['score'].mean().reset_index()
-    reweighted_scores['score'] = reweighted_scores['score'].apply(np.tanh)
-    reweighted_scores['RSA_kind'] = 'reweighted'
-    scores = pd.concat([classical_scores, reweighted_scores], axis=0)
+    scores['score'] = scores['score'].apply(np.arctanh)
+    scores = scores.groupby(['target'])['score'].mean().reset_index()
+    scores['score'] = scores['score'].apply(np.tanh)
+    # reweighted_scores['RSA_kind'] = 'reweighted'
+    # scores = pd.concat([classical_scores, reweighted_scores], axis=0)
     predicted_RDM_re = collapse_RDM(n_conditions, predicted_RDM, predicted_RDM_counter)
     return predicted_RDM_re, predictions, scores, betas
 
