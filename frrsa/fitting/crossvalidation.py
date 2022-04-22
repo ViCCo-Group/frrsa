@@ -139,68 +139,11 @@ def frrsa(target,
         not a channel-weight but an offset.
     """
     splitter = 'random'
-    outer_k, outer_reps = cv
-
-    if len(measures) != 2:
-        sys.exit(f'You provided only {len(measures)} arguments to the "measures" \
-                 parameter. You must provide 2. Aborting...')
     
-    allowed_predictor_measures = ['dot', 'sqeuclidean']
-    if measures[0] not in allowed_predictor_measures:
-        sys.exit(f'The first argument of "measures" that you provided is "{measures[0]}", \
-                 but it must be one of {allowed_predictor_measures}. Aborting...')
-    
-    allowed_target_measures = ['minkowski', 'cityblock', 'euclidean', 'mahalanobis',
-                               'cosine_dis', 'pearson_dis', 'spearman_dis', 'cosine_sim',
-                               'pearson_sim', 'spearman_sim', 'decoding_dis', 'decoding_sim']
-    if measures[1] not in allowed_target_measures:
-        sys.exit(f'The second argument of "measures" that you provided is "{measures[1]}", \
-                 but it must be one of {allowed_target_measures}. Aborting...')
-
-    if (measures[0]=='dot' and 'sim' not in measures[1]) or (measures[0]=='sqeuclidean' and 'sim' in measures[1]):
-        print(f'The first argument of "measures" that you provided is "{measures[0]}" (a similarity) \
-              while the second is "{measures[1]}" (a dissimilarity). This might yield confusing results. \
-              You might want to abort and chosse a (dis-)similarity for both. \n\
-              The algorithm is proceeding now.')
-        
-    if 'betas' in wanted:
-        betas_wanted = True
-    else:
-        betas_wanted = False
-    if 'predictions' in wanted:
-        predictions_wanted = True
-    else:
-        predictions_wanted = False
-
-    if hyperparams is None:
-        if not nonnegative:
-            hyperparams = np.linspace(.05, 1, 20)
-        else:
-            hyperparams = [1e-1, 1e0, 1e1, 5e1, 1e2, 5e2, 1e3, 4e3, 7e3, 1e4, 3e4, 5e4, 7e4, 1e5]
-        print(f'You did not provide hyperparams. We chose {hyperparams} for you.\n\
-              The algorithm is now proceeding normally.')
-
-    if not hasattr(hyperparams, "__len__"):
-        hyperparams = [hyperparams]
-
-    hyperparams = np.array(hyperparams)
-
-    if len(hyperparams) == 1:
-        print(f'You only provided one hyperparam candidate, namely {hyperparams}.\n\
-              That doesn\'t seem right...\n\
-              You might want to abort and provide more hyperparams. \n\
-              The algorithm is proceeding now.')
-
-    if hyperparams.ndim > 1:
-        sys.exit(f'Your hyperparams should be one-dimensional, but they have \
-                 {hyperparams.ndim} dimensions.\nTry to provide your hyperparams \
-                 in a non-nested list instead.\n Aborting...')
-
-    if np.any(np.diff(hyperparams) < 0):
-        print('Your provided hyperparams were not in a strictly increasing order.\n\
-              They were sorted internally.\nThe algorithm is now proceeding normally.')
-        hyperparams.sort()
-
+    # Check 'target'.
+    if target.shape[0] != target.shape[1]:
+        sys.exit('Your "target" is not a symmetrical matrix. Its shape must be \
+                 (n_conditions, n_conditions, n_targets) or (n_conditions, n_conditions).')
     try:
         n_conditions = target.shape[1]
         n_targets = target.shape[2]
@@ -211,13 +154,16 @@ def frrsa(target,
         raise Exception(f'There must at least be 9 conditions to execute frrsa, \
                         your data only has {n_conditions}.')
 
-    if not (n_conditions / outer_k > 2):
-        print('The combination of your data\'s number of conditions and your choice for "outer_k" would break this algorithm.')
-        while not (n_conditions / outer_k > 2):
-            outer_k -= 1
-        print(f'Therefore, "outer_k" is adjusted... to {outer_k}! Hence, an outer {outer_reps} times repeated {outer_k}-fold cross-validation will be carried out now.')
-        print(f'If you have more than 14 conditions, this could take much longer than a 5-fold cross-validation. You might want to abort and provide an "outer_k" that is a bit smaller than {outer_k}. The algorithm is proceeding now.')
-
+    # Check 'predictor'.
+    if predictor.shape[0] == predictor.shape[1]:
+        print('Your "predictor" is symmetrical. "predictor" must not be a RDM or RSM. \
+              If it is though, you should abort. Continuing...')
+    if predictor.ndim != 2:
+        sys.exit('Your "predictor" is of shape {predictor.shape}. It must be 2d.')
+                 
+    # Check 'preprocess'.
+    if type(preprocess) != bool:
+        sys.exit('The parameter "preprocess" must be of type bool.')
     if preprocess:
         if measures[0] == 'dot':
             z_scale = StandardScaler(copy=False, with_mean=True, with_std=True)
@@ -225,20 +171,117 @@ def frrsa(target,
         elif measures[0] == 'sqeuclidean':
             predictor = normalize(predictor, norm='l2', axis=0)
 
-    # y_classical = flatten_RDM(target)
-    # x_classical = flatten_RDM(make_RDM(predictor, distance))
+    # Check 'nonnegative'.
+    if type(nonnegative) != bool:
+        sys.exit('The parameter "nonnegative" must be of type bool.')
 
-    # classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
-    # classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
-    # classical_scores['target'] = list(range(n_targets))
-    # classical_scores['RSA_kind'] = 'classical'
+    # Check 'measures'.
+    if len(measures) != 2:
+        sys.exit(f'You provided {len(measures)} elements to the "measures" \
+                 parameter. You must provide exactly 2.')
 
-    n_outer_cvs = outer_k * outer_reps
+    allowed_predictor_measures = ['dot', 'sqeuclidean']
+    if measures[0] not in allowed_predictor_measures:
+        sys.exit(f'The first element of "measures" that you provided is "{measures[0]}", \
+                 but it must be one of {allowed_predictor_measures}.')
+    
+    allowed_target_measures = ['minkowski', 'cityblock', 'euclidean', 'mahalanobis',
+                               'cosine_dis', 'pearson_dis', 'spearman_dis', 'cosine_sim',
+                               'pearson_sim', 'spearman_sim', 'decoding_dis', 'decoding_sim']
+    if measures[1] not in allowed_target_measures:
+        sys.exit(f'The second element of "measures" that you provided is "{measures[1]}", \
+                 but it must be one of {allowed_target_measures}.')
 
+    if (measures[0]=='dot' and 'sim' not in measures[1]) or (measures[0]=='sqeuclidean' and 'sim' in measures[1]):
+        print(f'The first argument of "measures" that you provided is "{measures[0]}" (a similarity) \
+              while the second is "{measures[1]}" (a dissimilarity). This might yield confusing results. \
+              You might want to abort and choose a (dis-)similarity for both. \n\
+              Continuing...')
+
+    # Check 'cv'.
+    if type(cv) != list:
+        sys.exit('The parameter "cv" must be a list.')
+    if len(cv) != 2:
+        sys.exit('The parameter "cv" must have a length of 2.')
+    if not all(isinstance(item, int) for item in cv):
+        sys.exit('All elements of "cv" must be integers.')
+    outer_k, outer_reps = cv
+
+    # Check combination of 'cv' and 'n_conditions'.
+    if not (n_conditions / outer_k > 2):
+        print('The combination of your data\'s number of conditions and your choice for "outer_k" would break this algorithm.')
+        while not (n_conditions / outer_k > 2):
+            outer_k -= 1
+        print(f'Therefore, "outer_k" is adjusted... to {outer_k}! Hence, an outer {outer_reps} times repeated {outer_k}-fold cross-validation will be carried out now.')
+        print(f'If you have more than 14 conditions, this could take much longer than a 5-fold cross-validation. You might want to abort and provide an "outer_k" that is a bit smaller than {outer_k}. Continuing...')
+
+    # Check 'hyperparams'.
+    if hyperparams is None:
+        if not nonnegative:
+            hyperparams = np.linspace(.05, 1, 20)
+        else:
+            hyperparams = [1e-1, 1e0, 1e1, 5e1, 1e2, 5e2, 1e3, 4e3, 7e3, 1e4, 3e4, 5e4, 7e4, 1e5]
+        print(f'You did not provide hyperparams. We chose {hyperparams} for you.\n\
+              Continuing...')
+              
+    if not hasattr(hyperparams, "__len__"):
+        hyperparams = [hyperparams]
+        
+    hyperparams = np.array(hyperparams)
+    
+    if len(hyperparams) == 1:
+        print(f'You only provided one value within "hyperparam", namely {hyperparams}.\n\
+              That doesn\'t seem right...\n\
+              You might want to abort and provide more values. \n\
+              Continuing...')
+
+    if hyperparams.ndim > 1:
+        sys.exit(f'Your "hyperparams" should be one-dimensional, but they have \
+                 {hyperparams.ndim} dimensions.\nTry to provide your hyperparams \
+                 in a non-nested list instead.')
+
+    if np.any(np.diff(hyperparams) < 0):
+        print('Your provided hyperparams were not in a strictly increasing order.\n\
+              They were sorted internally.\nContinuing...')
+        hyperparams.sort()
+
+    # Check 'score_type'.
+    allowed_score_types = ['pearson', 'spearman']
+    if score_type not in allowed_score_types:
+        sys.exit(f'Your "score_type" is "{score_type}". But it must be one of {allowed_score_types}.')
+    
+    # Check 'wanted'.
+    if type(wanted) != list:
+        sys.exit('The parameter "wanted" must be a list.')
+    if not all(isinstance(item, str) for item in wanted):
+        sys.exit('All elements of "wanted" must be strings.')
+    if not wanted:
+        print('You did not request additional outputs. You will only receive "scores". Continuing...')
+        
+    # Check 'parallel'.
+    if type(parallel) != str:
+        sys.exit('The parameter "parallel" must be a string.')
     if parallel == 'max':
         parallel = psutil.cpu_count(logical=False)
     else:
         parallel = int(parallel)
+        
+    # Check 'random_state'.
+    if random_state:
+        print('You set "random_state". This will fix the randomness across runs. Continuing...')
+
+
+    if 'betas' in wanted:
+        betas_wanted = True
+    else:
+        betas_wanted = False
+    if 'predictions' in wanted:
+        predictions_wanted = True
+    else:
+        predictions_wanted = False
+
+
+    n_outer_cvs = outer_k * outer_reps
 
     predictions, score, fold, hyperparameter, predicted_RDM, \
         predicted_RDM_counter = start_outer_cross_validation(n_conditions,
@@ -285,6 +328,12 @@ def frrsa(target,
     scores = scores.groupby(['target'])['score'].mean().reset_index()
     scores['score'] = scores['score'].apply(np.tanh)
     # reweighted_scores['RSA_kind'] = 'reweighted'
+    # y_classical = flatten_RDM(target)
+    # x_classical = flatten_RDM(make_RDM(predictor, distance))
+    # classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
+    # classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
+    # classical_scores['target'] = list(range(n_targets))
+    # classical_scores['RSA_kind'] = 'classical'
     # scores = pd.concat([classical_scores, reweighted_scores], axis=0)
     predicted_RDM_re = collapse_RDM(n_conditions, predicted_RDM, predicted_RDM_counter)
     return predicted_RDM_re, predictions, scores, betas
