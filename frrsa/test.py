@@ -20,10 +20,13 @@ n_channels = 100  # How many features?
 n_conditions = 50  # How many conditions?
 n_targets = 2  # How many different target matrices?
 
+# The next block will essentially simulate a target filled with Pearson similarities
+# between -1 and 1.
 target_low = -1
 target_high = 1
 target = (target_high - target_low) * rng.random(size=(n_conditions, n_conditions, n_targets)) + target_low
 
+# The next block will simulate arbitrary predictor data.
 predictor_low = 0
 predictor_high = 100
 predictor = (predictor_high - predictor_low) * rng.random(size=(n_channels, n_conditions)) + predictor_low
