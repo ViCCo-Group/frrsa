@@ -294,7 +294,6 @@ def frrsa(target,
                                                                 measures,
                                                                 nonnegative)
 
-    # 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
     scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T,
                                      columns=['score', 'fold', 'hyperparameter', 'target'])
@@ -302,8 +301,6 @@ def frrsa(target,
     if 'predictions' in wanted:
         predictions = pd.DataFrame(data=np.delete(predictions, 0, 0),
                                    columns=['dissim_target', 'dissim_predicted', 'target', 'fold', 'first_obj', 'second_obj'])
-    # else:
-    #     predictions = None
 
     if 'betas' in wanted:
         idx = list(range(n_conditions))
@@ -319,8 +316,6 @@ def frrsa(target,
     if 'predicted_matrix' in wanted:
         predicted_matrix = collapse_RDM(n_conditions, predicted_matrix, predicted_matrix_counter)
 
-    # Average reweighted scores across outer CVs. For this, the correlations
-    # need to be Fisher's z-transformed and backtransformed after.
     scores['score'] = scores['score'].apply(np.arctanh)
     scores = scores.groupby(['target'])['score'].mean().reset_index()
     scores['score'] = scores['score'].apply(np.tanh)
@@ -425,16 +420,10 @@ def start_outer_cross_validation(n_conditions,
     else:
         predicted_matrix, predicted_matrix_counter = None, None
 
-    # Pre-allocate empty arrays in which, for each outer fold, the best
-    # hyperparameter, model scores, and a fold-counter will be saved, for each
-    # target.
     score = np.empty(n_outer_cvs * n_targets)
     fold = np.empty(n_outer_cvs * n_targets)
     hyperparameter = np.empty(n_outer_cvs * n_targets)
 
-    # Pre-allocate an empty array in which all predictions of the fitted
-    # model, the resepective y_test, factors denoting fold and target
-    # and the pairs to which predictions belong will be saved.
     if 'predictions' in wanted:
         predictions = np.zeros((1, 6))
     else:
@@ -609,8 +598,6 @@ def run_outer_cross_validation_batch(splitter,
     first_pair_obj, second_pair_obj = outer_test_indices[first_pair_idx], \
                                       outer_test_indices[second_pair_idx]
 
-    # Save predictions of the current outer CV with extra info.
-    # Note: 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.empty((y_test.shape))
     targets[:, :] = list(range(n_targets))
     targets = targets.reshape(len(targets) * n_targets, order='F')
@@ -623,7 +610,6 @@ def run_outer_cross_validation_batch(splitter,
         current_predictions = np.array([y_test_reshaped, y_regularized_reshaped, targets, fold, first_pair_obj_tiled, second_pair_obj_tiled]).T
     else:
         current_predictions = None
-
     return current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score, best_hyperparam
 
 
@@ -755,7 +741,6 @@ def start_inner_cross_validation(splitter,
     """
     n_hyperparams = len(hyperparams)
     inner_k, inner_reps = 5, 5
-
     n_conditions = len(outer_train_indices)
 
     if not (n_conditions / inner_k > 2):
@@ -766,7 +751,6 @@ def start_inner_cross_validation(splitter,
 
     inner_cv = data_splitter(splitter, inner_k, inner_reps, random_state)
     inner_hyperparams_scores = np.empty((n_hyperparams, n_targets, (inner_k * inner_reps)))
-    # Note: In the following loop, rkf.split is applied to the outer_train_indices!
     inner_loop_count = -1
     place = 'in'
     for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):

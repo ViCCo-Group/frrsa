@@ -88,7 +88,7 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
                                                            y_pred[:, hyperparam, target])[0]
                 elif score_type == 'RSS':
                     # Note: the RSS is converted by multiplying with -1 so that it is a
-                    # score to be _maximised_ just as the other two options.
+                    # score to be _maximised_ like the the other two options.
                     scores[hyperparam, target] = -((y_true[:, target] -
                                                     y_pred[:, hyperparam, target]) ** 2).sum()
 

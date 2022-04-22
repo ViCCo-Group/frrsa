@@ -73,9 +73,8 @@ def prepare_variables(X_train, y_train, X_test=None):
     y_train_mean = np.mean(y_train, axis=0)
     y_train_c = y_train - y_train_mean
     if X_test is not None:
-        # Scale X_test with _X_train_stds_ to get _nearly_ unstandardised
-        # predictions. Note that X_train is standardised. Therefore, scaling
-        # X_test with X_train_stds undoes the scaling of X_train.
+        # Scale X_test with _X_train_stds_ . Note that X_train is standardized.
+        # Therefore, scaling X_test with X_train_stds undoes the scaling of X_train.
         X_test_z = z_score.transform(X_test)
         return X_train_z, X_test_z, y_train_c, y_train_mean
     return X_train_z, z_score.mean_, z_score.scale_, y_train_c, y_train_mean
