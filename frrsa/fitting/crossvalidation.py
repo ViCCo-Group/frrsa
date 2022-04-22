@@ -35,7 +35,7 @@ def frrsa(target,
           predictor,
           preprocess,
           nonnegative,
-          distance='pearson',
+          measures,
           cv=[5, 10],
           hyperparams=None,
           score_type='pearson',
@@ -65,10 +65,18 @@ def frrsa(target,
         `sqeuclidean`, this amounts to normalizing each condition pattern.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
-    distance : {'pearson', 'sqeuclidean'}, optional
-        The distance measure used for the predictor RDM (defaults to `pearson`).
-        Note that the same distance measure for the predictor RDM is used when
-        applying classical and feature-reweighted RSA.
+    measures : list
+        A list of two strings that indicate (dis-)similarity measures. The 
+        first string indicates which (dis-)similarity measure shall be computed
+        within each feature of the predictor. It has two possible options: (1)
+        'dot' denotes the dot-product, a similarity measure; (2) 'sqeuclidean'
+        denotes the squared euclidean distance, a dissimilarity measure. The
+        second string must be set to indicate which measure had been used to
+        create the target matrix. Its possible dissimilarity measure options
+        are: 'minkowski', 'cityblock', 'euclidean', 'mahalanobis', 'cosine_dis',
+        'pearson_dis', 'spearman_dis', and 'decoding_dis', and its possible
+        similarity measure options are 'cosine_sim', 'pearson_sim', 'spearman_sim',
+        and 'decoding_sim'.
     cv : list, optional
         A list of integers, where the first integer indicates the fold size of
         the outer crossvalidation and the second integer indicates often the
@@ -107,14 +115,14 @@ def frrsa(target,
         separately. This is a potentially very large object. Only request if
         you really need it. Columns are as follows:
 
-        ================   ================================================================
+        ================   ================================================================================
         dissim_target      Dissimilarities for the target RDMs' condition pairs (as `float`)
         dissim_predicted   Reweighted dissimilarities for the predicting RDM's condition pairs (as `float`)
         target             Target to which dissimilarities belong (as `int`)
         fold               Fold to which dissimilarities belong (as `int`)
         first_obj          First condition of pair to which dissimilarities belong (as `int`)
         second_obj         Second condition of pair to which dissimilarities belong (as `int`)
-        ================   ================================================================
+        ================   ================================================================================
 
     scores : pd.DataFrame
         Holds the the representational correspondency scores between each target
@@ -132,6 +140,29 @@ def frrsa(target,
     """
     splitter = 'random'
     outer_k, outer_reps = cv
+
+    if len(measures) != 2:
+        sys.exit(f'You provided only {len(measures)} arguments to the "measures" \
+                 parameter. You must provide 2. Aborting...')
+    
+    allowed_predictor_measures = ['dot', 'sqeuclidean']
+    if measures[0] not in allowed_predictor_measures:
+        sys.exit(f'The first argument of "measures" that you provided is "{measures[0]}", \
+                 but it must be one of {allowed_predictor_measures}. Aborting...')
+    
+    allowed_target_measures = ['minkowski', 'cityblock', 'euclidean', 'mahalanobis',
+                               'cosine_dis', 'pearson_dis', 'spearman_dis', 'cosine_sim',
+                               'pearson_sim', 'spearman_sim', 'decoding_dis', 'decoding_sim']
+    if measures[1] not in allowed_target_measures:
+        sys.exit(f'The second argument of "measures" that you provided is "{measures[1]}", \
+                 but it must be one of {allowed_target_measures}. Aborting...')
+
+    if (measures[0]=='dot' and 'sim' not in measures[1]) or (measures[0]=='sqeuclidean' and 'sim' in measures[1]):
+        print(f'The first argument of "measures" that you provided is "{measures[0]}" (a similarity) \
+              while the second is "{measures[1]}" (a dissimilarity). This might yield confusing results. \
+              You might want to abort and chosse a (dis-)similarity for both. \n\
+              The algorithm is proceeding now.')
+        
     if 'betas' in wanted:
         betas_wanted = True
     else:
@@ -188,10 +219,10 @@ def frrsa(target,
         print(f'If you have more than 14 conditions, this could take much longer than a 5-fold cross-validation. You might want to abort and provide an "outer_k" that is a bit smaller than {outer_k}. The algorithm is proceeding now.')
 
     if preprocess:
-        if distance == 'pearson':
+        if measures[0] == 'dot':
             z_scale = StandardScaler(copy=False, with_mean=True, with_std=True)
             predictor = z_scale.fit_transform(predictor)
-        elif distance == 'sqeuclidean':
+        elif measures[0] == 'sqeuclidean':
             predictor = normalize(predictor, norm='l2', axis=0)
 
     # y_classical = flatten_RDM(target)
@@ -223,7 +254,7 @@ def frrsa(target,
                                                              n_outer_cvs,
                                                              parallel,
                                                              predictions_wanted,
-                                                             distance,
+                                                             measures,
                                                              nonnegative)
 
     # 'targets' is a numerical variable and denotes the distinct target RDMs.
@@ -239,7 +270,7 @@ def frrsa(target,
 
     if betas_wanted:
         idx = list(range(n_conditions))
-        X, *_ = compute_predictor_distance(predictor, idx, distance)
+        X, *_ = compute_predictor_distance(predictor, idx, measures[0])
         hyperparams = scores.groupby(['target'])['hyperparameter'].mean()
         y_classical = flatten_RDM(target)
         betas = final_model(X, y_classical, hyperparams, nonnegative, random_state)
@@ -272,7 +303,7 @@ def start_outer_cross_validation(n_conditions,
                                  n_outer_cvs,
                                  parallel,
                                  predictions_wanted,
-                                 distance,
+                                 measures,
                                  nonnegative):
     """Conduct repeated, nested, cross-validated FR-RSA.
 
@@ -314,8 +345,8 @@ def start_outer_cross_validation(n_conditions,
     predictions_wanted : bool
         Indication of whether predicticted dissimilarities for all outer
         cross-validations shall be returned.
-    distance : str
-        The distance measure used for the predictor RDM.
+    measures : str
+        The distance measure(s) used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
@@ -378,7 +409,7 @@ def start_outer_cross_validation(n_conditions,
                                                                                        predictor,
                                                                                        target,
                                                                                        predictions_wanted,
-                                                                                       distance,
+                                                                                       measures,
                                                                                        nonnegative) for outer_run in np.array_split(outer_runs, parallel))
         for job in jobs:
             results += job
@@ -397,7 +428,7 @@ def start_outer_cross_validation(n_conditions,
                                                                                       predictor,
                                                                                       target,
                                                                                       predictions_wanted,
-                                                                                      distance,
+                                                                                      measures,
                                                                                       nonnegative)
             results.append([current_predictions, y_regularized,
                             first_pair_obj, second_pair_obj, regularized_score,
@@ -432,7 +463,7 @@ def run_outer_cross_validation_batch(splitter,
                                      predictor,
                                      target,
                                      predictions_wanted,
-                                     distance,
+                                     measures,
                                      nonnegative):
     """Conduct one outer cross-validated FR-RSA run.
 
@@ -471,8 +502,8 @@ def run_outer_cross_validation_batch(splitter,
     predictions_wanted : bool
         Indication of whether predicticted dissimilarities for all outer
         cross-validations shall be returned.
-    distance : str
-        The distance measure used for the predictor RDM.
+    measures : str
+        The distance measure(s) used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
@@ -504,7 +535,7 @@ def run_outer_cross_validation_batch(splitter,
                                                             target,
                                                             score_type,
                                                             hyperparams,
-                                                            distance,
+                                                            measures,
                                                             nonnegative)
 
     best_hyperparam = evaluate_hyperparams(inner_hyperparams_scores,
@@ -517,7 +548,7 @@ def run_outer_cross_validation_batch(splitter,
                                               outer_test_indices,
                                               score_type,
                                               best_hyperparam,
-                                              distance,
+                                              measures,
                                               place,
                                               nonnegative,
                                               random_state)
@@ -552,7 +583,7 @@ def run_parallel(outer_run,
                  predictor,
                  target,
                  predictions_wanted,
-                 distance,
+                 measures,
                  nonnegative):
     """Wrap the function `run_outer_cross_validation_batch` to run it in parallel.
 
@@ -585,8 +616,8 @@ def run_parallel(outer_run,
     predictions_wanted : bool
         Indication of whether predicticted dissimilarities for all outer
         cross-validations shall be returned.
-    distance : str
-        The distance measure used for the predictor RDM.
+    measures : str
+        The distance measure(s) used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
@@ -612,7 +643,7 @@ def run_parallel(outer_run,
                                                                                   predictor,
                                                                                   target,
                                                                                   predictions_wanted,
-                                                                                  distance,
+                                                                                  measures,
                                                                                   nonnegative)
         results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score,
                         best_hyperparam, outer_loop_count])
@@ -627,7 +658,7 @@ def start_inner_cross_validation(splitter,
                                  target,
                                  score_type,
                                  hyperparams,
-                                 distance,
+                                 measures,
                                  nonnegative):
     """Conduct inner repated cross-validated FR-RSA.
 
@@ -658,8 +689,8 @@ def start_inner_cross_validation(splitter,
         Type of association measure to compute between predicting and target RDMs.
     hyperparams : array-like
         The hyperparameter candidates to evaluate in the regularization scheme.
-    distance : str
-        The distance measure used for the predictor RDM.
+    measures : str
+        The distance measure(s) used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
@@ -688,7 +719,7 @@ def start_inner_cross_validation(splitter,
     for inner_train_indices, inner_test_indices in inner_cv.split(outer_train_indices):
         inner_loop_count += 1
         train_idx, test_idx = outer_train_indices[inner_train_indices], outer_train_indices[inner_test_indices]
-        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, distance, place, nonnegative, random_state)
+        score_in, *_ = fit_and_score(predictor, target, train_idx, test_idx, score_type, hyperparams, measures, place, nonnegative, random_state)
         inner_hyperparams_scores[:, :, inner_loop_count] = score_in
     return inner_hyperparams_scores
 
@@ -761,7 +792,7 @@ def fit_and_score(predictor,
                   test_idx,
                   score_type,
                   hyperparams,
-                  distance,
+                  measures,
                   place,
                   nonnegative,
                   random_state):
@@ -785,8 +816,8 @@ def fit_and_score(predictor,
         Type of association measure to compute between predicting and target RDMs.
     hyperparams : array_like
         Hyperparameters for which regularized model shall be fitted.
-    distance : str
-        The distance measure used for the predictor RDM.
+    measures : str
+        The distance measure(s) used for the predictor and target.
     place : str
         Indication of whether this function is applied in inner our outer crossvalidation.
     nonnegative : bool
@@ -811,19 +842,26 @@ def fit_and_score(predictor,
     y_test : ndarray
         Test dissimilarities for each target.
     """
-    X_train, *_ = compute_predictor_distance(predictor, train_idx, distance)
-    X_test, first_pair_idx, second_pair_idx = compute_predictor_distance(predictor, test_idx, distance)
+    X_train, *_ = compute_predictor_distance(predictor, train_idx, measures[0])
+    X_test, first_pair_idx, second_pair_idx = compute_predictor_distance(predictor, test_idx, measures[0])
     y_train = flatten_RDM(target[np.ix_(train_idx, train_idx)])
     y_test = flatten_RDM(target[np.ix_(test_idx, test_idx)])
     if place == 'in':
         y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, random_state)
     elif place == 'out':
         y_pred = regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative, random_state)
-    # if distance == 'sqeuclidean':
-    #     y_pred[y_pred < 0] = 0
-    # elif distance == 'pearson':
-    #     y_pred[y_pred < -1] = -1
-    #     y_pred[y_pred > 1] = 1
+    # Clip illegal predictions to nearest legal value (i.e. bound predictions).
+    if measures[1] in ['minkowski', 'cityblock', 'euclidean', 'mahalanobis']:
+        y_pred[y_pred < 0] = 0
+    elif measures[1] in ['cosine_dis', 'pearson_dis', 'spearman_dis']:
+        y_pred[y_pred < 0] = 0
+        y_pred[y_pred > 2] = 2
+    elif measures[1] in ['cosine_sim', 'pearson_sim', 'spearman_sim']:
+        y_pred[y_pred < -1] = -1
+        y_pred[y_pred > 1] = 1
+    elif measures[1] in ['decoding_dis', 'decoding_sim']:
+        y_pred[y_pred < 0] = 0
+        y_pred[y_pred > 100] = 100
     score = scoring(y_test, y_pred, score_type=score_type)
     return score, first_pair_idx, second_pair_idx, y_pred, y_test
 
@@ -841,7 +879,7 @@ def compute_predictor_distance(predictor,
     idx : array_like
         Holds indices of conditions for feature-specific distancse shall be computed.
     distance : str
-        The distance measure used for the predictor RDM.
+        The distance measure used for the predictor.
 
     Returns
     -------
@@ -854,7 +892,7 @@ def compute_predictor_distance(predictor,
         The second conditions making up the condition pairs to which dissimilarities
         are available.
     """
-    if distance == 'pearson':
+    if distance == 'dot':
         X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])
     elif distance == 'sqeuclidean':
         X, first_pair_idx, second_pair_idx = sqeuclidean(predictor[:, idx])

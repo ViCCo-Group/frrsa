@@ -31,7 +31,7 @@ predictor = (predictor_high - predictor_low) * rng.random(size=(n_channels, n_co
 # Set the main function's parameters.
 preprocess = True
 nonnegative = False
-distance = 'pearson'
+measures = ['dot', 'pearson_sim']
 cv = [5, 1]
 hyperparams = None
 score_type = 'pearson'
@@ -46,7 +46,7 @@ predicted_RDM, predictions, scores, betas = frrsa(target,
                                                   predictor,
                                                   preprocess,
                                                   nonnegative,
-                                                  distance,
+                                                  measures,
                                                   cv,
                                                   hyperparams,
                                                   score_type,
