@@ -36,17 +36,17 @@ from frrsa.fitting.crossvalidation import frrsa
 # load your "predictor" data.
 # set the necessary flags ("preprocess", "nonnegative", "distance", ...)
 
-predicted_RDM, predictions, scores, betas = frrsa(target,
-                                                  predictor, 
-                                                  preprocess,
-                                                  nonnegative,
-                                                  distance='pearson',
-                                                  cv=[5, 10], 
-                                                  hyperparams=None, 
-                                                  score_type='pearson', 
-                                                  wanted=['betas', 'predictions'],
-                                                  parallel='2',
-                                                  random_state=None)
+scores, predicted_matrix, betas, predictions = frrsa(target,
+          predictor,
+          preprocess,
+          nonnegative,
+          measures,
+          cv=[5, 10],
+          hyperparams=None,
+          score_type='pearson',
+          wanted=[],
+          parallel='1',
+          random_state=None)
 ```                                            
 
 
@@ -61,8 +61,8 @@ One may argue that it could be the case that the interaction of (dis-)similariti
 As of now, only L2-regularization aka Ridge Regression.
 #### _You say ridge regression; which hyperparameter space should I check?_
 If you set the parameter `nonnegative` to `False`, L2-regularization is implemented using Fractional Ridge Regression (FRR; [Rokem & Kay, 2020](https://pubmed.ncbi.nlm.nih.gov/33252656/)). One advantage of FRR is that the hyperparameter to be optimized is the fraction between ordinary least squares and L2-regularized regression coefficients, which ranges between 0 and 1. Hence, FRR allows assessing the full range of possible regularization parameters. In the context of FR-RSA, twenty evenly spaced values between 0.1 and 1 are pre-set. If you want to specify custom regularization values that shall be assessed, you are able to do so by providing a list of candidate values as the `hyperparams` argument of the frrsa function. <br/> If you set the parameter `nonnegative` to `True`,  L2-regularization is currently implemented using Scikit-Learn functions. They have the disadvantage that one has to define the hyperparameter space oneself, which can be tricky. If you do not provide hyerparameter candidates yourself, [14 pre-set values](https://github.com/ViCCo-Group/frrsa/blob/0b6d7ab35d9eb6962bc6a4eeabfb2b8e345a9969/frrsa/fitting/crossvalidation.py#L142) will be used which *might* be sufficient (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)).
-#### _Which `distance` measures can be used?_
-The parameter `distance` lets you choose which (dis-)similarity measure will be computed for the Representational Matrices of the predicting system. Currently, you can either select `sqeuclidean` or `pearson`. <br/> The former will compute the squared Euclidean distance between the condition pairs. <br/> The latter will compute Pearson's correlation coefficient between the condition pairs. Wait, what?, you might ask at this point, how can one compute a *correlation* between two conditions within each feature, that is, if there is only one data point per condition?! Well spotted! Actually, when applying reweighting, the closest you can get to a feature-specific correlation is the dot-product after having z-transformed the condition pairs. In that case, if you were to average across features (equivalent to weighting each feature equally), you would end up again with the Pearson correlation. In any case, selecting `pearson` computes the feature-specific dot-product for the condition pairs.  <br/> You might further think that the parameter's name (`distance`) is a slight misnomer, as a feature-specific dot-product is not a dissimilarity but rather a similarity measure (and I agree, see [#25](/../../issues/25)). Which one you should choose depends on your data. Further, if the Representational Matrix of your target system holds similarities, it is likely more intuitive to select `pearson` (to have similarities on both sides of the equation). If, though, your `target` holds dissimilarities, it might conversely be more intuitive to select `sqeuclidean`.
+#### _Which (dis-)similarity `measures` can be used?_
+The parameter `measures` is a list that expects two strings. The first string lets you choose which (dis-)similarity measure will be computed within each feature of the predictor. It has two possible options: (1) 'dot' denotes the dot-product, a similarity measure; (2) 'sqeuclidean' denotes the squared euclidean distance, a dissimilarity measure. The second string must be set to indicate which measure had been used to create the target matrix. Its possible dissimilarity measure options are: 'minkowski', 'cityblock', 'euclidean', 'mahalanobis', 'cosine_dis', 'pearson_dis', 'spearman_dis', and 'decoding_dis', and its possible similarity measure options are 'cosine_sim', 'pearson_sim', 'spearman_sim', and 'decoding_sim'. <br/> Which measure you should choose for the predictor depends on your data. Additionally, if your `target` holds similarities, it is likely more intuitive to select `dot` (to have similarities on both sides of the equation). If, though, your `target` holds dissimilarities, it might conversely be more intuitive to select `sqeuclidean`.
 #### _What else? What objects does the function return? Are there other parameters I can specify when running FR-RSA?_
 There are default values for all parameters, which we partly assessed (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)). However, you can input custom parameters as you wish. For now, see the [respective docstring](https://github.com/ViCCo-Group/frrsa/blob/2c7ea73adf4fa6f1ade1c0557d4f455322453311/frrsa/fitting/crossvalidation.py#L45) for an explanation of all returned objects. A more elaborate documentation is work in progress (see [#14](/../../issues/14)).
 
