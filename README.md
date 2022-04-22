@@ -34,7 +34,7 @@ from frrsa.fitting.crossvalidation import frrsa
 
 # load your "target" RDM or RSM.
 # load your "predictor" data.
-# set the necessary flags ("preprocess", "nonnegative", "distance", ...)
+# set the necessary flags ("preprocess", "nonnegative", "measures", ...)
 
 scores, predicted_matrix, betas, predictions = frrsa(target,
                                                      predictor,
