@@ -274,8 +274,8 @@ def frrsa(target,
 
     n_outer_cvs = outer_k * outer_reps
 
-    predictions, score, fold, hyperparameter, predicted_RDM, \
-        predicted_RDM_counter = start_outer_cross_validation(n_conditions,
+    predictions, score, fold, hyperparameter, predicted_matrix, \
+        predicted_matrix_counter = start_outer_cross_validation(n_conditions,
                                                              splitter,
                                                              random_state,
                                                              outer_k,
@@ -314,9 +314,7 @@ def frrsa(target,
         betas = None
 
     if 'predicted_matrix' in wanted:
-        predicted_matrix = collapse_RDM(n_conditions, predicted_RDM, predicted_RDM_counter)
-    else:
-        predicted_matrix = None
+        predicted_matrix = collapse_RDM(n_conditions, predicted_matrix, predicted_matrix_counter)
 
     # Average reweighted scores across outer CVs. For this, the correlations
     # need to be Fisher's z-transformed and backtransformed after.
@@ -408,18 +406,18 @@ def start_outer_cross_validation(n_conditions,
         Index indicating outer folds.
     hyperparameter : ndarray
         Best hyperparameter of each target for each outer fold.
-    predicted_RDM : ndarray
+    predicted_matrix : ndarray
         The predicted dissimilarities summed across outer folds with shape
         (n_conditions, n_conditions, n_targets).
-    predicted_RDM_counter : ndarray
+    predicted_matrix_counter : ndarray
         The number of predicted dissimilarities summed across outer folds
         with shape (n_conditions, n_conditions, n_targets).
     """
     if 'predicted_matrix' in wanted:
-        predicted_RDM = np.zeros((n_conditions, n_conditions, n_targets))
-        predicted_RDM_counter = np.zeros((n_conditions, n_conditions, n_targets))
+        predicted_matrix = np.zeros((n_conditions, n_conditions, n_targets))
+        predicted_matrix_counter = np.zeros((n_conditions, n_conditions, n_targets))
     else:
-        predicted_RDM, predicted_RDM_counter = None, None
+        predicted_matrix, predicted_matrix_counter = None, None
 
     # Pre-allocate empty arrays in which, for each outer fold, the best
     # hyperparameter, model scores, and a fold-counter will be saved, for each
@@ -491,14 +489,14 @@ def start_outer_cross_validation(n_conditions,
             predictions = np.concatenate((predictions, current_predictions), axis=0)
 
         if 'predicted_matrix' in wanted:
-            predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
-            predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1
+            predicted_matrix[first_pair_obj, second_pair_obj, :] += y_regularized
+            predicted_matrix_counter[first_pair_obj, second_pair_obj, :] += 1
 
         start_idx = outer_loop_count * n_targets
         score[start_idx:start_idx + n_targets] = regularized_score
         fold[start_idx:start_idx + n_targets] = outer_loop_count
         hyperparameter[start_idx:start_idx + n_targets] = best_hyperparam
-    return predictions, score, fold, hyperparameter, predicted_RDM, predicted_RDM_counter
+    return predictions, score, fold, hyperparameter, predicted_matrix, predicted_matrix_counter
 
 
 def run_outer_cross_validation_batch(splitter,
@@ -797,8 +795,8 @@ def evaluate_hyperparams(inner_hyperparams_scores,
 
 
 def collapse_RDM(n_conditions,
-                 predicted_RDM,
-                 predicted_RDM_counter):
+                 predicted_matrix,
+                 predicted_matrix_counter):
     """Average RDM halves.
 
     Collapse RDMs along their diagonal, sum the respective values, divide them
@@ -808,31 +806,31 @@ def collapse_RDM(n_conditions,
     ----------
     n_conditions : int
         The number of conditions.
-    predicted_RDM : ndarray
+    predicted_matrix : ndarray
         The predicted dissimilarities summed across outer folds with shape
         (n_conditions, n_conditions, n_targets).
-    predicted_RDM_counter : ndarray
+    predicted_matrix_counter : ndarray
         The number of predicted dissimilarities summed across outer folds
         with shape (n_conditions, n_conditions, n_targets).
 
     Returns
     -------
-    predicted_RDM_re : ndarray
+    predicted_matrix_re : ndarray
         The predicted dissimilarities averaged across outer folds with shape
         (n_conditions, n_conditions, n_targets). The value `9999` denotes
         condition pairs for which no dissimilarity was predicted.
     """
     idx_low = np.tril_indices(n_conditions, k=-1)
     idx_up = tuple([idx_low[1], idx_low[0]])
-    sum_of_preds_halves = predicted_RDM[idx_up] + predicted_RDM[idx_low]
-    sum_of_count_halves = predicted_RDM_counter[idx_up] + predicted_RDM_counter[idx_low]
+    sum_of_preds_halves = predicted_matrix[idx_up] + predicted_matrix[idx_low]
+    sum_of_count_halves = predicted_matrix_counter[idx_up] + predicted_matrix_counter[idx_low]
     with np.errstate(divide='ignore', invalid='ignore'):
         average_preds = sum_of_preds_halves / sum_of_count_halves
-    predicted_RDM_re = np.zeros((predicted_RDM.shape))
-    predicted_RDM_re[idx_low[0], idx_low[1], :] = average_preds
-    predicted_RDM_re = predicted_RDM_re + predicted_RDM_re.transpose((1, 0, 2))
-    predicted_RDM_re[(np.isnan(predicted_RDM_re))] = 9999
-    return predicted_RDM_re
+    predicted_matrix_re = np.zeros((predicted_matrix.shape))
+    predicted_matrix_re[idx_low[0], idx_low[1], :] = average_preds
+    predicted_matrix_re = predicted_matrix_re + predicted_matrix_re.transpose((1, 0, 2))
+    predicted_matrix_re[(np.isnan(predicted_matrix_re))] = 9999
+    return predicted_matrix_re
 
 
 def fit_and_score(predictor,
