@@ -32,6 +32,13 @@ def calculate_pair_indices(n_conditions):
     ----------
     n_conditions : int
         Amount of conditions in the original predictor.
+        
+    Returns
+    -------
+    first_pair_members : ndarray
+        Indices of the first elements of all possible pairs of for `n_conditions` conditions.
+    second_pair_members : ndarray
+        Indices of the second elements of all possible pairs of for `n_conditions` conditions.
     """
     pairs = np.array(list((itertools.combinations(range(n_conditions), 2))))
     first_pair_members = pairs[:, 0]
@@ -51,10 +58,10 @@ def hadamard(predictor):
     -------
     hadamard_prod: ndarray
         Hadamard products for all column-pairs of `predictor`.
-    first_pair_members: ndarray
-        Index of the first element of the hadamard calculation.
-    second_pair_members: ndarray
-        Index of the second element of the hadamard calculation.
+    first_pair_members : ndarray
+        Indices of the first elements of all possible column-pairs of `predictor`.
+    second_pair_members : ndarray
+        Indices of the first elements of all possible column-pairs of `predictor`.
     """
     check_predictor_data(predictor)
     r, c = np.triu_indices(predictor.shape[1], 1)
@@ -76,10 +83,10 @@ def sqeuclidean(predictor):
     -------
     X : ndarray
         Squared euclidean distance between all column-pairs for each row.
-    first_pair_members: ndarray
-        Index of the first element of the hadamard calculation.
-    second_pair_members: ndarray
-        Index of the second element of the hadamard calculation.
+    first_pair_members : ndarray
+        Indices of the first elements of all possible column-pairs of `predictor`.
+    second_pair_members : ndarray
+        Indices of the first elements of all possible column-pairs of `predictor`.
     """
     check_predictor_data(predictor)
     n_conditions = predictor.shape[1]

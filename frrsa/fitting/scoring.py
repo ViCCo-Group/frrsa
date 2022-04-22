@@ -16,6 +16,7 @@ from scipy.stats import spearmanr, pearsonr
 
 def scoring_classical(y_unfitted: np.ndarray, x_unfitted: np.ndarray,
                       score_type: str = 'pearson') -> np.ndarray:
+    # SOFT-DEPRECATED
     """Compute the correspondence between two vectors.
 
     For each column pair of `y_unfitted` one of several possible measures is
@@ -57,9 +58,9 @@ def scoring(y_true: np.ndarray, y_pred: np.ndarray,
     Parameters
     ----------
     y_true : ndarray
-        Vectorized target RDM(s) for the test set.
+        Vectorized target matrices for the test set.
     y_pred : ndarray
-        Vectorized reweighted predicting RDM(s) for the test set.
+        Vectorized reweighted predicting matries for the test set.
     score_type : {'pearson', 'spearman', 'RSS'}, optional
         Type of correspondence measure to compute (defaults to `pearson`).
 

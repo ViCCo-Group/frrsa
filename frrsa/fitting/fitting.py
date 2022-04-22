@@ -23,17 +23,17 @@ else:
 
 
 def count_targets(y):
-    """Compute number of target RDMs.
+    """Compute number of target.
 
     Parameters
     ----------
     y : ndarray
-        Data of all target RDMs.
+        Data of all targets.
 
     Returns
     -------
     number : int
-        The number of target RDMs.
+        The number of targets.
     """
     if y.ndim == 2:
         return y.shape[1]
@@ -82,7 +82,7 @@ def prepare_variables(X_train, y_train, X_test=None):
 
 
 def find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, random_state):
-    """Perform crossvalidated Ridge regression with each candidate hyperparameter.
+    """Perform crossvalidated Ridge regression for each candidate hyperparameter.
 
     For each target in `y_train`, Ridge regression is fitted with each candidate
     hyperparameter. Then, predictions for each target for each candidate
@@ -181,16 +181,16 @@ def regularized_model(X_train, X_test, y_train, y_test, hyperparams, nonnegative
 def final_model(X, y, hyperparams, nonnegative, random_state):
     """Perform Ridge Regression on the whole dataset for each target.
 
-    For each target in `y`, Ridge regression is fitted to the whole dataset using
-    each target's best hyperparameter. Then, betas for each target's
-    measurement channel are computed and returned.
+    For each target in `y`, Ridge regression is fitted to the whole dataset
+    using each target's average best hyperparameter. Then, betas for each
+    target's measurement channel are computed and returned.
 
     Parameters
     ----------
     X : ndarray
-        Predictor matrix of the whole data set.
+        Predictor matrix for the whole data set.
     y: ndarray
-        Target(s) of the whole data set.
+        Target(s) for the whole data set.
     hyperparams : ndarray
         Best hyperparameter for each target in `y`.
     nonnegative : bool
@@ -201,8 +201,8 @@ def final_model(X, y, hyperparams, nonnegative, random_state):
     Returns
     -------
     beta_unstandardized : ndarray
-        Beta weight for each predictor's measurement channel plus intercept of
-        shape (n_channels+1, n_targets).
+        Beta weight for each predictor's measurement channel plus intercept.
+        Shape is (n_channels+1, n_targets).
     """
     X_z, X_means, X_stds, y_c, y_mean = prepare_variables(X, y)
     n_targets = count_targets(y)

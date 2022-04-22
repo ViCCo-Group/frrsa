@@ -18,13 +18,13 @@ from sklearn.preprocessing import StandardScaler, normalize
 from joblib import Parallel, delayed
 
 if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
-    from helper.classical_RSA import flatten_RDM#, make_RDM
+    from helper.classical_RSA import flatten_matrix#, make_RDM
     from helper.data_splitter import data_splitter
     from helper.predictor_distance import hadamard, sqeuclidean
     from fitting.scoring import scoring#, scoring_classical
     from fitting.fitting import regularized_model, find_hyperparameters, final_model
 else:
-    from frrsa.frrsa.helper.classical_RSA import flatten_RDM#, make_RDM
+    from frrsa.frrsa.helper.classical_RSA import flatten_matrix#, make_RDM
     from frrsa.frrsa.helper.data_splitter import data_splitter
     from frrsa.frrsa.helper.predictor_distance import hadamard, sqeuclidean
     from frrsa.frrsa.fitting.scoring import scoring#, scoring_classical
@@ -51,13 +51,14 @@ def frrsa(target,
     Parameters
     ----------
     target : ndarray
-        The RDM which shall be predicted. Expected shape is
-        (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
-        number of target RDMs. If `n_targets == 1`, `targets` can be of
-        shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall be predicted.
+        Expected shape is (n_conditions, n_conditions, n_targets), where `n_targets`
+        denotes the number of target matrices. If `n_targets == 1`, `targets` can be
+        of shape (n_conditions, n_conditions).
     predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
-        (n_channels, n_conditions).
+        The data that shall be used as a predictor. Expected shape is
+        (n_channels, n_conditions). For each channel, a separate representational
+        matrix will be computed and reweighted.
     preprocess : bool
         Indication of whether to initially preprocess the condition patterns
         of `predictor`. If `distance` is set to `pearson`, this amounts to
@@ -86,20 +87,21 @@ def frrsa(target,
         (defaults to `None`). Should be in strictly ascending order.
         If `None`, a sensible default is chosen internally.
     score_type : {'pearson', 'spearman'}, optional
-        Type of association measure to compute between predicting and target
-        RDMs (defaults to `pearson`).
+        Type of association measure to compute between predictor and target
+        (defaults to `pearson`).
     wanted : list, optional
-         A list of strings that indicate which output the user wants the
-         function to return. Possible elements are 'predicted_matrix', 'betas'
-         and 'predictions'. If the first string is present, then the reweighted
-         predicted representational matrix will be returned. If the second string
-         is present, betas for each measurement channel will be returned. If the
-         third string is present, predicticted (dis-)similarities for all outer
-         cross-validations will be returned. There is no mandatory order of the
-         strings. Defaults to an empty list, i.e. only `scores` will be returned.
+        A list of strings that indicate which output the user wants the
+        function to return. Possible elements are 'predicted_matrix', 'betas'
+        and 'predictions'. If the first string is present, then the reweighted
+        predicted representational matrix will be returned. If the second string
+        is present, betas for each measurement channel will be returned. If the
+        third string is present, predicticted (dis-)similarities for all outer
+        cross-validations will be returned. There is no mandatory order of the
+        strings. Defaults to an empty list, i.e. only `scores` will be returned.
     parallel : str, optional
-        Number of parallel jobs to parallelize the outer cross-validation,
-        `max` would lead to using all of the machine's CPUs cores (defaults to `1`).
+        Number of parallel jobs that shall be set up to parallelize the outer
+        cross-validation, `max` would lead to using all of the machine's CPUs
+        cores (defaults to `1`).
     random_state : int, optional
         State of the randomness (defaults to `None`). Should only be set for
         testing purposes. If set, leads to reproducible output across multiple
@@ -108,17 +110,18 @@ def frrsa(target,
     Returns
     -------
     scores : pd.DataFrame
-    Holds the the representational correspondency scores between each target
-    and the predictor, for feature-reweighted RSA. Columns are as follows:
+        Holds the the representational correspondency scores between each target
+        and the predictor. Columns are as follows:
 
-    ======   =============================================================
+    ======   ================================================================
     target   Target to which scores belong (as `int`)
-    scores   Correspondence between predicting and target RMD (as `float`)
-    ======   =============================================================
+    scores   Correspondence between predicting and target matrix (as `float`)
+    ======   ================================================================
 
     predicted_matrix : ndarray, optional
         The reweighted predicted representational matrix averaged across outer
-        folds with shape (n_conditions, n_conditions, n_targets).
+        folds with shape (n_conditions, n_conditions, n_targets). The value `9999` denotes
+        condition pairs for which no (dis-)similarity was predicted.
 
     betas : pd.DataFrame, optional
         Holds the weights for each target's measurement channel with the shape
@@ -126,19 +129,19 @@ def frrsa(target,
         not a channel-weight but an offset.
         
     predictions : pd.DataFrame, optional
-        Holds dissimilarities for the target RDMs and for the predicting RDM
+        Holds (dis-)similarities for the target and for the predictor,
         and to which condition pairs they belong, for all folds and targets
         separately. This is a potentially very large object. Only request if
         you really need it. Columns are as follows:
 
-        ================   ================================================================================
-        dissim_target      Dissimilarities for the target RDMs' condition pairs (as `float`)
-        dissim_predicted   Reweighted dissimilarities for the predicting RDM's condition pairs (as `float`)
-        target             Target to which dissimilarities belong (as `int`)
-        fold               Fold to which dissimilarities belong (as `int`)
-        first_obj          First condition of pair to which dissimilarities belong (as `int`)
-        second_obj         Second condition of pair to which dissimilarities belong (as `int`)
-        ================   ================================================================================
+        ================   ==============================================================================
+        dissim_target      (Dis-)similarities for the targets' condition pairs (as `float`)
+        dissim_predicted   Reweighted (dis-)similarities for the predictor's condition pairs (as `float`)
+        target             Target to which (dis-)similarities belong (as `int`)
+        fold               Fold to which (dis-)similarities belong (as `int`)
+        first_obj          First condition of pair to which (dis-)similarities belong (as `int`)
+        second_obj         Second condition of pair to which (dis-)similarities belong (as `int`)
+        ================   ==============================================================================
     """
     splitter = 'random'
     
@@ -276,20 +279,20 @@ def frrsa(target,
 
     predictions, score, fold, hyperparameter, predicted_matrix, \
         predicted_matrix_counter = start_outer_cross_validation(n_conditions,
-                                                             splitter,
-                                                             random_state,
-                                                             outer_k,
-                                                             outer_reps,
-                                                             n_targets,
-                                                             predictor,
-                                                             target,
-                                                             score_type,
-                                                             hyperparams,
-                                                             n_outer_cvs,
-                                                             parallel,
-                                                             wanted,
-                                                             measures,
-                                                             nonnegative)
+                                                                splitter,
+                                                                random_state,
+                                                                outer_k,
+                                                                outer_reps,
+                                                                n_targets,
+                                                                predictor,
+                                                                target,
+                                                                score_type,
+                                                                hyperparams,
+                                                                n_outer_cvs,
+                                                                parallel,
+                                                                wanted,
+                                                                measures,
+                                                                nonnegative)
 
     # 'targets' is a numerical variable and denotes the distinct target RDMs.
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
@@ -306,7 +309,7 @@ def frrsa(target,
         idx = list(range(n_conditions))
         X, *_ = compute_predictor_distance(predictor, idx, measures[0])
         hyperparams = scores.groupby(['target'])['hyperparameter'].mean()
-        y_classical = flatten_RDM(target)
+        y_classical = flatten_matrix(target)
         betas = final_model(X, y_classical, hyperparams, nonnegative, random_state)
         betas = pd.DataFrame(data=betas,
                              columns=[f'betas_target_{i+1}' for i in range(n_targets)])
@@ -322,8 +325,8 @@ def frrsa(target,
     scores = scores.groupby(['target'])['score'].mean().reset_index()
     scores['score'] = scores['score'].apply(np.tanh)
     # reweighted_scores['RSA_kind'] = 'reweighted'
-    # y_classical = flatten_RDM(target)
-    # x_classical = flatten_RDM(make_RDM(predictor, distance))
+    # y_classical = flatten_matrix(target)
+    # x_classical = flatten_matrix(make_RDM(predictor, distance))
     # classical_scores = pd.DataFrame(columns=['target', 'score', 'RSA_kind'])
     # classical_scores['score'] = scoring_classical(y_classical, x_classical, score_type)
     # classical_scores['target'] = list(range(n_targets))
@@ -358,60 +361,63 @@ def start_outer_cross_validation(n_conditions,
         The number of conditions.
     splitter : str
         How the data shall be split. If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up.
+        is split randomly. If `kfold`, a classical k-fold is set up. Soft-deprecated.
     random_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.
+        State of the randomness (defaults to `None`). Should only be set for
+        testing purposes. If set, leads to reproducible output across multiple
+        function calls.
     outer_k : int
         The fold size of the outer crossvalidation.
     outer_reps : int
         How often the outer k-fold is repeated.
     n_targets : int
-        Denotes the number of target RDMs.
+        Denotes the number of targets.
     predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
-        (n_channels, n_conditions).
+        The data that shall be used as a predictor. Expected shape is
+        (n_channels, n_conditions). For each channel, a separate representational
+        matrix will be computed and reweighted.
     target : ndarray
-        The RDM which shall be predicted. Expected shape is
-        (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
-        number of target RDMs. If `n_targets == 1`, `targets` can be of
-        shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall be predicted.
+        Expected shape is (n_conditions, n_conditions, n_targets), where `n_targets`
+        denotes the number of target matrices. If `n_targets == 1`, `targets` can be
+        of shape (n_conditions, n_conditions).
     score_type : str
-        Type of association measure to compute between predicting and target RDMs.
+        Type of association measure to compute between predictor and target.
     hyperparams : array-like
-        The hyperparameter candidates to evaluate in the regularization scheme
+        The hyperparameter candidates to evaluate in the regularization scheme.
     n_outer_cvs : int
         Denotes how many outer crossvalidations are conducted in total.
     parallel : int
-        Number of parallel jobs to parallelize the outer cross-validation,
+        Number of parallel jobs that shall be set up to parallelize the outer
+        cross-validation
     wanted : list
-         A list of strings that indicate which output the user wants the
-         function to return.
-    measures : str
-        The distance measure(s) used for the predictor and target.
+        A list of strings that indicate which output the user wants the
+        function to return.
+    measures : list
+        A list of two strings that indicate (dis-)similarity measures used for
+        the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
     predictions : ndarray
-        Holds dissimilarities for the target RDMs and for the predicting RDM
+        Holds (dis-)similarities for the target and for the predictor,
         and to which condition pairs they belong, for all folds and targets
         separately.
     score : ndarray
-        Holds the scores, that is, the representational correspondence between
-        each target RDM and the predicting RDM, for classical and
-        feature-reweighted RSA, for each target.
+        Holds the the representational correspondency scores between each target
+        and the predictor, for feature-reweighted RSA.
     fold : ndarray
         Index indicating outer folds.
     hyperparameter : ndarray
-        Best hyperparameter of each target for each outer fold.
+        Best hyperparameter for each target within each outer fold.
     predicted_matrix : ndarray
-        The predicted dissimilarities summed across outer folds with shape
-        (n_conditions, n_conditions, n_targets).
+        The reweighted predicted representational matrix averaged across outer
+        folds with shape (n_conditions, n_conditions, n_targets).
     predicted_matrix_counter : ndarray
-        The number of predicted dissimilarities summed across outer folds
-        with shape (n_conditions, n_conditions, n_targets).
+        A counter of how often a (dis-)similarity for specific condition-pair
+        has been predicted across outer folds. Shape is (n_conditions, n_conditions, n_targets).
     """
     if 'predicted_matrix' in wanted:
         predicted_matrix = np.zeros((n_conditions, n_conditions, n_targets))
@@ -522,54 +528,54 @@ def run_outer_cross_validation_batch(splitter,
     ----------
     splitter : str
         How the data shall be split. If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up.
+        is split randomly. If `kfold`, a classical k-fold is set up. Soft-deprecated.
     random_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.
+        State of the randomness (defaults to `None`). Should only be set for
+        testing purposes. If set, leads to reproducible output across multiple
+        function calls.
     n_targets : int
         Denotes the number of target RDMs.
     outer_train_indices : array_like
         The indices denoting conditions belonging to the outer training set.
     score_type : str
-        Type of association measure to compute between predicting and target RDMs.
+        Type of association measure to compute between predictor and target.
     hyperparams : array-like
         The hyperparameter candidates to evaluate in the regularization scheme.
     outer_test_indices : array_like
         The indices denoting conditions belonging to the outer test set.
     outer_loop_count : int
-        Denoting the number of the current outer cross-validation.
+        Denotes the current outer cross-validation.
     predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
+        The data that shall be used as a predictor. Expected shape is
         (n_channels, n_conditions).
     target : ndarray
-        The RDM which shall be predicted. Expected format is
-        (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
-        number of target RDMs. If `n_targets == 1`, `targets` can be of
-        shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall be predicted.
+        Expected shape is (n_conditions, n_conditions, n_targets).
     wanted : list
-         A list of strings that indicate which output the user wants the
-         function to return.
-    measures : str
-        The distance measure(s) used for the predictor and target.
+        A list of strings that indicate which output the user wants the
+        function to return.
+    measures : list
+        A list of two strings that indicate (dis-)similarity measures used for
+        the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
     current_predictions : ndarray
-        Predicted and test dissimilarities, respective targets, fold, and
+        Predicted and test (dis-)similarities, respective targets, fold, and
         conditions, for the current outer fold.
     y_regularized : ndarray
-        Predicted dissimilarities for each target for the current outer fold.
+        Predicted (dis-)similarities for each target for the current outer fold.
     first_pair_obj : ndarray
-        The first conditions making up the condition pairs to which dissimilarities
-        are available.
+        The first condition of the condition pair to which the (dis-)similarities
+        belong to.
     second_pair_obj : ndarray
-        The second conditions making up the condition pairs to which dissimilarities
-        are available.
+        The second condition of the condition pair to which the (dis-)similarities
+        belong to.
     regularized_score : ndarray
-        Holds the scores, that is, the representational correspondence between
-        each target RDM and the predicting RDM for feature-reweighted RSA.
+        Holds the the representational correspondency scores between each target
+        and the predictor.
     best_hyperparam : ndarray
         Holds the best hyperparameter for each target, for the current outer fold.
     """
@@ -644,27 +650,27 @@ def run_parallel(outer_run,
         How the data shall be split. If `random`, data
         is split randomly. If `kfold`, a classical k-fold is set up.
     random_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.
+        State of the randomness (defaults to `None`). Should only be set for
+        testing purposes. If set, leads to reproducible output across multiple
+        function calls.
     n_targets : int
-        Denotes the number of target RDMs.
+        Denotes the number of targets.
     score_type : str
-        Type of association measure to compute between predicting and target RDMs.
+        Type of association measure to compute between predictor and target.
     hyperparams : array-like
         The hyperparameter candidates to evaluate in the regularization scheme.
     predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
+        The data that shall be used as a predictor. Expected shape is
         (n_channels, n_conditions).
     target : ndarray
-        The RDM which shall be predicted. Expected format is
-        (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
-        number of target RDMs. If `n_targets == 1`, `targets` can be of
-        shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall be predicted.
+        Expected shape is (n_conditions, n_conditions, n_targets).
     wanted : list
-         A list of strings that indicate which output the user wants the
-         function to return.
-    measures : str
-        The distance measure(s) used for the predictor and target.
+        A list of strings that indicate which output the user wants the
+        function to return.
+    measures : list
+        A list of two strings that indicate (dis-)similarity measures used for
+        the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
@@ -716,28 +722,28 @@ def start_inner_cross_validation(splitter,
     ----------
     splitter : str
         How the data shall be split. If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up.
+        is split randomly. If `kfold`, a classical k-fold is set up. Soft-deprecated.
     random_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.
+        State of the randomness (defaults to `None`). Should only be set for
+        testing purposes. If set, leads to reproducible output across multiple
+        function calls.
     n_targets : int
-        Denotes the number of target RDMs.
+        Denotes the number of targets.
     outer_train_indices : array_like
         The indices denoting conditions belonging to the outer training set.
     predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
+        The data that shall be used as a predictor. Expected shape is
         (n_channels, n_conditions).
     target : ndarray
-        The RDM which shall be predicted. Expected format is
-        (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
-        number of target RDMs. If `n_targets == 1`, `targets` can be of
-        shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall be predicted.
+        Expected shape is (n_conditions, n_conditions, n_targets).
     score_type : str
-        Type of association measure to compute between predicting and target RDMs.
+        Type of association measure to compute between predictor and target.
     hyperparams : array-like
         The hyperparameter candidates to evaluate in the regularization scheme.
-    measures : str
-        The distance measure(s) used for the predictor and target.
+    measures : list
+        A list of two strings that indicate (dis-)similarity measures used for
+        the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
@@ -799,26 +805,27 @@ def collapse_RDM(n_conditions,
                  predicted_matrix_counter):
     """Average RDM halves.
 
-    Collapse RDMs along their diagonal, sum the respective values, divide them
-    with a counter, and reshape the resulting values back to an RDM.
+    Collapse representational matrices along their diagonal, sum the respective
+    values, divide them by the counter, and reshape the resulting values back
+    to a symmetrical matrix.
 
     Parameters
     ----------
     n_conditions : int
         The number of conditions.
     predicted_matrix : ndarray
-        The predicted dissimilarities summed across outer folds with shape
-        (n_conditions, n_conditions, n_targets).
+        The reweighted predicted representational matrix summed across outer
+        folds with shape (n_conditions, n_conditions, n_targets).
     predicted_matrix_counter : ndarray
-        The number of predicted dissimilarities summed across outer folds
-        with shape (n_conditions, n_conditions, n_targets).
+        A counter of how often a (dis-)similarity for specific condition-pair
+        has been predicted across outer folds. Shape is (n_conditions, n_conditions, n_targets).
 
     Returns
     -------
     predicted_matrix_re : ndarray
-        The predicted dissimilarities averaged across outer folds with shape
-        (n_conditions, n_conditions, n_targets). The value `9999` denotes
-        condition pairs for which no dissimilarity was predicted.
+        The reweighted predicted representational matrix averaged across outer
+        folds with shape (n_conditions, n_conditions, n_targets). The value `9999` denotes
+        condition pairs for which no (dis-)similarity was predicted.
     """
     idx_low = np.tril_indices(n_conditions, k=-1)
     idx_up = tuple([idx_low[1], idx_low[0]])
@@ -848,51 +855,50 @@ def fit_and_score(predictor,
     Parameters
     ----------
     predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
+        The data that shall be used as a predictor. Expected shape is
         (n_channels, n_conditions).
     target : ndarray
-        The RDM which shall be predicted. Expected format is
-        (n_conditions, n_conditions. n_targets), where `n_targets` denotes the
-        number of target RDMs. If `n_targets == 1`, `targets` can be of
-        shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall be predicted.
+        Expected shape is (n_conditions, n_conditions, n_targets).
     train_idx : array_like
         The indices denoting conditions belonging to the train set.
     test_idx : array_like
         The indices denoting conditions belonging to the test set.
     score_type : str
-        Type of association measure to compute between predicting and target RDMs.
+        Type of association measure to compute between predictor and target.
     hyperparams : array_like
         Hyperparameters for which regularized model shall be fitted.
-    measures : str
-        The distance measure(s) used for the predictor and target.
+    measures : list
+        A list of two strings that indicate (dis-)similarity measures used for
+        the predictor and target.
     place : str
         Indication of whether this function is applied in inner our outer crossvalidation.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
     random_state : int
-        State of the randomness in the system. Should only
-        be set for testing purposes, will be deprecated in release-version.
+        State of the randomness (defaults to `None`). Should only be set for
+        testing purposes.
 
     Returns
     -------
-    score : ndarray
-        Holds the scores, that is, the representational correspondence between
-        each target RDM and the predicting RDM for feature-reweighted RSA.
+    scores : pd.DataFrame
+        Holds the the representational correspondency scores between each target
+        and the predictor.
     first_pair_idx : ndarray
-        The first conditions making up the condition pairs to which dissimilarities
-        are available.
+        The first condition of the condition pair to which the (dis-)similarities
+        belong to.
     second_pair_idx : ndarray
-        The second conditions making up the condition pairs to which dissimilarities
-        are available.
+        The second condition of the condition pair to which the (dis-)similarities
+        belong to.
     y_pred : ndarray
-        Predicted dissimilarities for each target.
+        Predicted (dis-)similarities for each target.
     y_test : ndarray
-        Test dissimilarities for each target.
+        Test (dis-)similarities for each target.
     """
     X_train, *_ = compute_predictor_distance(predictor, train_idx, measures[0])
     X_test, first_pair_idx, second_pair_idx = compute_predictor_distance(predictor, test_idx, measures[0])
-    y_train = flatten_RDM(target[np.ix_(train_idx, train_idx)])
-    y_test = flatten_RDM(target[np.ix_(test_idx, test_idx)])
+    y_train = flatten_matrix(target[np.ix_(train_idx, train_idx)])
+    y_test = flatten_matrix(target[np.ix_(test_idx, test_idx)])
     if place == 'in':
         y_pred = find_hyperparameters(X_train, X_test, y_train, hyperparams, nonnegative, random_state)
     elif place == 'out':
@@ -915,33 +921,34 @@ def fit_and_score(predictor,
 
 def compute_predictor_distance(predictor,
                                idx,
-                               distance):
-    """Compute feature-specific distances for the predictor.
+                               measure):
+    """Compute feature-specific (dis-)similarities for the predictor.
 
     Parameters
     ----------
     predictor : ndarray
-        The RDM that shall be used as a predictor. Expected shape is
+        The data that shall be used as a predictor. Expected shape is
         (n_channels, n_conditions).
     idx : array_like
-        Holds indices of conditions for feature-specific distancse shall be computed.
-    distance : str
-        The distance measure used for the predictor.
+        Holds indices of those conditions for which the feature-specific
+        (dis-)similarity shall be computed.
+    measure : str
+        The (dis-)similarity measure that shall be used for the predictor.
 
     Returns
     -------
     X : ndarray
-        The feature-specific distances for `predictor`.
+        The feature-specific (dis-)similarities for `predictor`.
     first_pair_idx : ndarray
-        The first conditions making up the condition pairs to which dissimilarities
-        are available.
+        The first condition of the condition pair to which the (dis-)similarities
+        belong to.
     second_pair_idx : ndarray
-        The second conditions making up the condition pairs to which dissimilarities
-        are available.
+        The second condition of the condition pair to which the (dis-)similarities
+        belong to.
     """
-    if distance == 'dot':
+    if measure == 'dot':
         X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])
-    elif distance == 'sqeuclidean':
+    elif measure == 'sqeuclidean':
         X, first_pair_idx, second_pair_idx = sqeuclidean(predictor[:, idx])
     X = X.transpose()
     return X, first_pair_idx, second_pair_idx

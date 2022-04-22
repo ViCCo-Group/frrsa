@@ -14,6 +14,7 @@ from scipy.spatial.distance import pdist
 
 
 def make_RDM(activity_pattern_matrix, distance='pearson'):
+    #SOFT-DEPRECATED
     """Compute dissimilarity matrix.
 
     Parameters
@@ -37,27 +38,27 @@ def make_RDM(activity_pattern_matrix, distance='pearson'):
     return rdm
 
 
-def flatten_RDM(rdm: np.ndarray) -> np.ndarray:
-    """Flatten the upper half of a dissimilarity matrix to a vector.
+def flatten_matrix(representational_matrix: np.ndarray) -> np.ndarray:
+    """Flatten the upper half of a representational matrix to a vector.
 
-     Multiple dissimilarity matrices can be fed at once.
+     Multiple representational matrices can be fed at once.
 
     Parameters
     ----------
-    rdm : ndarray
-        The RDM)s) which shall be flattened. Expected shape is
-        (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
-        number of RDMs. If `n_targets == 1`, `rdm` can be of shape
-        (n_conditions, n_conditions).
+    representational_matrix : ndarray
+        The representational matrix (or matrices) which shall be flattened.
+        Expected shape is (n_conditions, n_conditions, n_targets), where
+        `n_targets` denotes the number of matrices. If `n_targets == 1`,
+        `representational_matrix` can be of shape (n_conditions, n_conditions).
 
     Returns
     -------
-    rdv : ndarray
+    representational_vector : ndarray
         The unique upper half of `rdm`.
     """
-    if rdm.ndim == 3:
+    if representational_matrix.ndim == 3:
         mapfunc = partial(squareform, checks=False)
-        rdv = np.array(list(map(mapfunc, np.moveaxis(rdm, -1, 0)))).T
-    elif rdm.ndim == 2:
-        rdv = rdm[np.triu_indices(rdm.shape[0], k=1)].reshape(-1, 1)
-    return rdv
+        representational_vector = np.array(list(map(mapfunc, np.moveaxis(representational_matrix, -1, 0)))).T
+    elif representational_matrix.ndim == 2:
+        representational_vector = representational_matrix[np.triu_indices(representational_matrix.shape[0], k=1)].reshape(-1, 1)
+    return representational_vector
