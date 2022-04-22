@@ -90,12 +90,13 @@ def frrsa(target,
         RDMs (defaults to `pearson`).
     wanted : list, optional
          A list of strings that indicate which output the user wants the
-         function to return. Possible elements are 'betas' and 'predictions'.
-         If the first string is present, then betas for each measurement
-         channel will be returned. If the second string is present, predicticted
-         (dis-)similarities for all outer cross-validations will be returned.
-         There is no mandatory order of the strings. Defaults to an empty list,
-         i.e. neither betas nor predictions are returned.
+         function to return. Possible elements are 'predicted_matrix', 'betas'
+         and 'predictions'. If the first string is present, then the reweighted
+         predicted representational matrix will be returned. If the second string
+         is present, betas for each measurement channel will be returned. If the
+         third string is present, predicticted (dis-)similarities for all outer
+         cross-validations will be returned. There is no mandatory order of the
+         strings. Defaults to an empty list, i.e. only `scores` will be returned.
     parallel : str, optional
         Number of parallel jobs to parallelize the outer cross-validation,
         `max` would lead to using all of the machine's CPUs cores (defaults to `1`).
@@ -106,9 +107,24 @@ def frrsa(target,
 
     Returns
     -------
-    predicted_RDM_re : ndarray
-        The predicted dissimilarities averaged across outer folds with shape
-        (n_conditions, n_conditions, n_targets).
+    scores : pd.DataFrame
+    Holds the the representational correspondency scores between each target
+    and the predictor, for feature-reweighted RSA. Columns are as follows:
+
+    ======   =============================================================
+    target   Target to which scores belong (as `int`)
+    scores   Correspondence between predicting and target RMD (as `float`)
+    ======   =============================================================
+
+    predicted_matrix : ndarray, optional
+        The reweighted predicted representational matrix averaged across outer
+        folds with shape (n_conditions, n_conditions, n_targets).
+
+    betas : pd.DataFrame, optional
+        Holds the weights for each target's measurement channel with the shape
+        (n_conditions, n_targets). Note that the first weight for each target is
+        not a channel-weight but an offset.
+        
     predictions : pd.DataFrame, optional
         Holds dissimilarities for the target RDMs and for the predicting RDM
         and to which condition pairs they belong, for all folds and targets
@@ -123,20 +139,6 @@ def frrsa(target,
         first_obj          First condition of pair to which dissimilarities belong (as `int`)
         second_obj         Second condition of pair to which dissimilarities belong (as `int`)
         ================   ================================================================================
-
-    scores : pd.DataFrame
-        Holds the the representational correspondency scores between each target
-        and the predictor, for feature-reweighted RSA. Columns are as follows:
-
-        =============   =============================================================
-        target          Target to which scores belong (as `int`)
-        scores          Correspondence between predicting and target RMD (as `float`)
-        =============   =============================================================
-
-    betas : pd.DataFrame, optional
-        Holds the weights for each target's measurement channel with the shape
-        (n_conditions, n_targets). Note that the first weight for each target is
-        not a channel-weight but an offset.
     """
     splitter = 'random'
     
@@ -270,17 +272,6 @@ def frrsa(target,
     if random_state:
         print('You set "random_state". This will fix the randomness across runs. Continuing...')
 
-
-    if 'betas' in wanted:
-        betas_wanted = True
-    else:
-        betas_wanted = False
-    if 'predictions' in wanted:
-        predictions_wanted = True
-    else:
-        predictions_wanted = False
-
-
     n_outer_cvs = outer_k * outer_reps
 
     predictions, score, fold, hyperparameter, predicted_RDM, \
@@ -296,7 +287,7 @@ def frrsa(target,
                                                              hyperparams,
                                                              n_outer_cvs,
                                                              parallel,
-                                                             predictions_wanted,
+                                                             wanted,
                                                              measures,
                                                              nonnegative)
 
@@ -305,13 +296,13 @@ def frrsa(target,
     scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T,
                                      columns=['score', 'fold', 'hyperparameter', 'target'])
 
-    if predictions_wanted:
+    if 'predictions' in wanted:
         predictions = pd.DataFrame(data=np.delete(predictions, 0, 0),
                                    columns=['dissim_target', 'dissim_predicted', 'target', 'fold', 'first_obj', 'second_obj'])
-    else:
-        predictions = None
+    # else:
+    #     predictions = None
 
-    if betas_wanted:
+    if 'betas' in wanted:
         idx = list(range(n_conditions))
         X, *_ = compute_predictor_distance(predictor, idx, measures[0])
         hyperparams = scores.groupby(['target'])['hyperparameter'].mean()
@@ -321,6 +312,11 @@ def frrsa(target,
                              columns=[f'betas_target_{i+1}' for i in range(n_targets)])
     else:
         betas = None
+
+    if 'predicted_matrix' in wanted:
+        predicted_matrix = collapse_RDM(n_conditions, predicted_RDM, predicted_RDM_counter)
+    else:
+        predicted_matrix = None
 
     # Average reweighted scores across outer CVs. For this, the correlations
     # need to be Fisher's z-transformed and backtransformed after.
@@ -335,8 +331,7 @@ def frrsa(target,
     # classical_scores['target'] = list(range(n_targets))
     # classical_scores['RSA_kind'] = 'classical'
     # scores = pd.concat([classical_scores, reweighted_scores], axis=0)
-    predicted_RDM_re = collapse_RDM(n_conditions, predicted_RDM, predicted_RDM_counter)
-    return predicted_RDM_re, predictions, scores, betas
+    return scores, predicted_matrix, betas, predictions
 
 
 def start_outer_cross_validation(n_conditions,
@@ -351,7 +346,7 @@ def start_outer_cross_validation(n_conditions,
                                  hyperparams,
                                  n_outer_cvs,
                                  parallel,
-                                 predictions_wanted,
+                                 wanted,
                                  measures,
                                  nonnegative):
     """Conduct repeated, nested, cross-validated FR-RSA.
@@ -391,9 +386,9 @@ def start_outer_cross_validation(n_conditions,
         Denotes how many outer crossvalidations are conducted in total.
     parallel : int
         Number of parallel jobs to parallelize the outer cross-validation,
-    predictions_wanted : bool
-        Indication of whether predicticted dissimilarities for all outer
-        cross-validations shall be returned.
+    wanted : list
+         A list of strings that indicate which output the user wants the
+         function to return.
     measures : str
         The distance measure(s) used for the predictor and target.
     nonnegative : bool
@@ -420,8 +415,11 @@ def start_outer_cross_validation(n_conditions,
         The number of predicted dissimilarities summed across outer folds
         with shape (n_conditions, n_conditions, n_targets).
     """
-    predicted_RDM = np.zeros((n_conditions, n_conditions, n_targets))
-    predicted_RDM_counter = np.zeros((n_conditions, n_conditions, n_targets))
+    if 'predicted_matrix' in wanted:
+        predicted_RDM = np.zeros((n_conditions, n_conditions, n_targets))
+        predicted_RDM_counter = np.zeros((n_conditions, n_conditions, n_targets))
+    else:
+        predicted_RDM, predicted_RDM_counter = None, None
 
     # Pre-allocate empty arrays in which, for each outer fold, the best
     # hyperparameter, model scores, and a fold-counter will be saved, for each
@@ -433,8 +431,10 @@ def start_outer_cross_validation(n_conditions,
     # Pre-allocate an empty array in which all predictions of the fitted
     # model, the resepective y_test, factors denoting fold and target
     # and the pairs to which predictions belong will be saved.
-    if predictions_wanted:
+    if 'predictions' in wanted:
         predictions = np.zeros((1, 6))
+    else:
+        predictions = None
 
     outer_cv = data_splitter(splitter, outer_k, outer_reps, random_state)
     list_of_indices = list(range(n_conditions))
@@ -457,7 +457,7 @@ def start_outer_cross_validation(n_conditions,
                                                                                        hyperparams,
                                                                                        predictor,
                                                                                        target,
-                                                                                       predictions_wanted,
+                                                                                       wanted,
                                                                                        measures,
                                                                                        nonnegative) for outer_run in np.array_split(outer_runs, parallel))
         for job in jobs:
@@ -476,7 +476,7 @@ def start_outer_cross_validation(n_conditions,
                                                                                       outer_loop_count,
                                                                                       predictor,
                                                                                       target,
-                                                                                      predictions_wanted,
+                                                                                      wanted,
                                                                                       measures,
                                                                                       nonnegative)
             results.append([current_predictions, y_regularized,
@@ -487,17 +487,17 @@ def start_outer_cross_validation(n_conditions,
         current_predictions, y_regularized, first_pair_obj, second_pair_obj, \
             regularized_score, best_hyperparam, outer_loop_count = result
 
-        if predictions_wanted:
+        if 'predictions' in wanted:
             predictions = np.concatenate((predictions, current_predictions), axis=0)
-        else:
-            predictions = None
+
+        if 'predicted_matrix' in wanted:
+            predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
+            predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1
 
         start_idx = outer_loop_count * n_targets
         score[start_idx:start_idx + n_targets] = regularized_score
         fold[start_idx:start_idx + n_targets] = outer_loop_count
         hyperparameter[start_idx:start_idx + n_targets] = best_hyperparam
-        predicted_RDM[first_pair_obj, second_pair_obj, :] += y_regularized
-        predicted_RDM_counter[first_pair_obj, second_pair_obj, :] += 1
     return predictions, score, fold, hyperparameter, predicted_RDM, predicted_RDM_counter
 
 
@@ -511,7 +511,7 @@ def run_outer_cross_validation_batch(splitter,
                                      outer_loop_count,
                                      predictor,
                                      target,
-                                     predictions_wanted,
+                                     wanted,
                                      measures,
                                      nonnegative):
     """Conduct one outer cross-validated FR-RSA run.
@@ -548,9 +548,9 @@ def run_outer_cross_validation_batch(splitter,
         (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
         number of target RDMs. If `n_targets == 1`, `targets` can be of
         shape (n_conditions, n_conditions).
-    predictions_wanted : bool
-        Indication of whether predicticted dissimilarities for all outer
-        cross-validations shall be returned.
+    wanted : list
+         A list of strings that indicate which output the user wants the
+         function to return.
     measures : str
         The distance measure(s) used for the predictor and target.
     nonnegative : bool
@@ -610,7 +610,7 @@ def run_outer_cross_validation_batch(splitter,
     targets = np.empty((y_test.shape))
     targets[:, :] = list(range(n_targets))
     targets = targets.reshape(len(targets) * n_targets, order='F')
-    if predictions_wanted:
+    if 'predictions' in wanted:
         y_test_reshaped = y_test.reshape(len(y_test) * n_targets, order='F')  # make all ys 1D.
         y_regularized_reshaped = y_regularized.reshape(len(y_regularized) * n_targets, order='F')
         first_pair_obj_tiled = np.tile(first_pair_obj, n_targets)
@@ -631,7 +631,7 @@ def run_parallel(outer_run,
                  hyperparams,
                  predictor,
                  target,
-                 predictions_wanted,
+                 wanted,
                  measures,
                  nonnegative):
     """Wrap the function `run_outer_cross_validation_batch` to run it in parallel.
@@ -662,9 +662,9 @@ def run_parallel(outer_run,
         (n_conditions, n_conditions, n_targets), where `n_targets` denotes the
         number of target RDMs. If `n_targets == 1`, `targets` can be of
         shape (n_conditions, n_conditions).
-    predictions_wanted : bool
-        Indication of whether predicticted dissimilarities for all outer
-        cross-validations shall be returned.
+    wanted : list
+         A list of strings that indicate which output the user wants the
+         function to return.
     measures : str
         The distance measure(s) used for the predictor and target.
     nonnegative : bool
@@ -691,7 +691,7 @@ def run_parallel(outer_run,
                                                                                   outer_loop_count,
                                                                                   predictor,
                                                                                   target,
-                                                                                  predictions_wanted,
+                                                                                  wanted,
                                                                                   measures,
                                                                                   nonnegative)
         results.append([current_predictions, y_regularized, first_pair_obj, second_pair_obj, regularized_score,

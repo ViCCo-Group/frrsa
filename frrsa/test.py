@@ -35,21 +35,19 @@ measures = ['dot', 'pearson_sim']
 cv = [5, 1]
 hyperparams = None
 score_type = 'pearson'
-wanted = ['betas', 'predictions']
-betas_wanted = True
-predictions_wanted = True
+wanted = ['predicted_matrix', 'betas', 'predictions']
 parallel = '2'
 random_state = None
 
 # Call the main funtion and enjoy the output.
-predicted_RDM, predictions, scores, betas = frrsa(target,
-                                                  predictor,
-                                                  preprocess,
-                                                  nonnegative,
-                                                  measures,
-                                                  cv,
-                                                  hyperparams,
-                                                  score_type,
-                                                  wanted,
-                                                  parallel,
-                                                  random_state)
+scores, predicted_matrix, betas, predictions = frrsa(target,
+                                                     predictor,
+                                                     preprocess,
+                                                     nonnegative,
+                                                     measures,
+                                                     cv,
+                                                     hyperparams,
+                                                     score_type,
+                                                     wanted,
+                                                     parallel,
+                                                     random_state)
