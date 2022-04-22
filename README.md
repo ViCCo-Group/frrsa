@@ -8,7 +8,7 @@ This repository provides a Python package to run Feature-Reweighted Representati
 ## Getting Started
 
 ### Prerequisites
-The package is written in Python 3 using the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section). You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml) which you should use to create an Anaconda environment.
+The package is written in Python 3 using the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section). You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml) which you should use to [create an Anaconda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file).
 
 ### Installing
 For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`). Then, you could set up via Python:
@@ -37,16 +37,16 @@ from frrsa.fitting.crossvalidation import frrsa
 # set the necessary flags ("preprocess", "nonnegative", "distance", ...)
 
 scores, predicted_matrix, betas, predictions = frrsa(target,
-          predictor,
-          preprocess,
-          nonnegative,
-          measures,
-          cv=[5, 10],
-          hyperparams=None,
-          score_type='pearson',
-          wanted=[],
-          parallel='1',
-          random_state=None)
+                                                     predictor,
+                                                     preprocess,
+                                                     nonnegative,
+                                                     measures,
+                                                     cv=[5, 10],
+                                                     hyperparams=None,
+                                                     score_type='pearson',
+                                                     wanted=[],
+                                                     parallel='1',
+                                                     random_state=None)
 ```                                            
 
 
@@ -62,9 +62,9 @@ As of now, only L2-regularization aka Ridge Regression.
 #### _You say ridge regression; which hyperparameter space should I check?_
 If you set the parameter `nonnegative` to `False`, L2-regularization is implemented using Fractional Ridge Regression (FRR; [Rokem & Kay, 2020](https://pubmed.ncbi.nlm.nih.gov/33252656/)). One advantage of FRR is that the hyperparameter to be optimized is the fraction between ordinary least squares and L2-regularized regression coefficients, which ranges between 0 and 1. Hence, FRR allows assessing the full range of possible regularization parameters. In the context of FR-RSA, twenty evenly spaced values between 0.1 and 1 are pre-set. If you want to specify custom regularization values that shall be assessed, you are able to do so by providing a list of candidate values as the `hyperparams` argument of the frrsa function. <br/> If you set the parameter `nonnegative` to `True`,  L2-regularization is currently implemented using Scikit-Learn functions. They have the disadvantage that one has to define the hyperparameter space oneself, which can be tricky. If you do not provide hyerparameter candidates yourself, [14 pre-set values](https://github.com/ViCCo-Group/frrsa/blob/0b6d7ab35d9eb6962bc6a4eeabfb2b8e345a9969/frrsa/fitting/crossvalidation.py#L142) will be used which *might* be sufficient (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)).
 #### _Which (dis-)similarity `measures` can be used?_
-The parameter `measures` is a list that expects two strings. The first string lets you choose which (dis-)similarity measure will be computed within each feature of the predictor. It has two possible options: (1) 'dot' denotes the dot-product, a similarity measure; (2) 'sqeuclidean' denotes the squared euclidean distance, a dissimilarity measure. The second string must be set to indicate which measure had been used to create the target matrix. Its possible dissimilarity measure options are: 'minkowski', 'cityblock', 'euclidean', 'mahalanobis', 'cosine_dis', 'pearson_dis', 'spearman_dis', and 'decoding_dis', and its possible similarity measure options are 'cosine_sim', 'pearson_sim', 'spearman_sim', and 'decoding_sim'. <br/> Which measure you should choose for the predictor depends on your data. Additionally, if your `target` holds similarities, it is likely more intuitive to select `dot` (to have similarities on both sides of the equation). If, though, your `target` holds dissimilarities, it might conversely be more intuitive to select `sqeuclidean`.
+The parameter `measures` is a list that expects two strings. The first string lets you choose which (dis-)similarity measure will be computed within each feature of the predictor. It has two possible options: (1) `'dot'` denotes the dot-product, a similarity measure; (2) `'sqeuclidean'` denotes the squared euclidean distance, a dissimilarity measure. The second string must be set to indicate which measure had been used to create the target matrix. Its possible dissimilarity measure options are: `'minkowski'`, `'cityblock'`, `'euclidean'`, `'mahalanobis'`, `'cosine_dis'`, `'pearson_dis'`, `'spearman_dis'`, and `'decoding_dis'`, and its possible similarity measure options are `'cosine_sim'`, `'pearson_sim'`, `'spearman_sim'`, and `'decoding_sim'`. <br/> Which measure you should choose for the predictor depends on your data. Additionally, if your `target` holds similarities, it is likely more intuitive to select `'dot'` (to have similarities on both sides of the equation). If, though, your `target` holds dissimilarities, it might conversely be more intuitive to select `'sqeuclidean'`.
 #### _What else? What objects does the function return? Are there other parameters I can specify when running FR-RSA?_
-There are default values for all parameters, which we partly assessed (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)). However, you can input custom parameters as you wish. For now, see the [respective docstring](https://github.com/ViCCo-Group/frrsa/blob/2c7ea73adf4fa6f1ade1c0557d4f455322453311/frrsa/fitting/crossvalidation.py#L45) for an explanation of all returned objects. A more elaborate documentation is work in progress (see [#14](/../../issues/14)).
+There are default values for all parameters, which we partly assessed (see our [preprint](https://github.com/ViCCo-Group/frrsa#citation)). However, you can input custom parameters as you wish. For now, see the [respective docstring](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/fitting/crossvalidation.py#L45) for an explanation of all returned objects. A more elaborate documentation is work in progress (see [#14](/../../issues/14)).
 
 
 ## Known issues
