@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import unittest
 
 from frrsa.helper.classical_RSA import make_RDM, flatten_matrix

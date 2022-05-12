@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import unittest
 
 from frrsa.helper.predictor_distance import hadamard, sqeuclidean, check_predictor_data, calculate_pair_indices

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Spyder 4.2.5 | Python 3.8.8 64-bit | Qt 5.9.7 | PyQt5 5.9.2 | Darwin 18.7.0
 """
 Conducts feature-reweighted Representational Similarity Analysis (frrsa).
 
@@ -8,8 +7,6 @@ Conducts feature-reweighted Representational Similarity Analysis (frrsa).
 """
 
 import sys
-import os
-from pathlib import Path
 import numpy as np
 import pandas as pd
 import psutil
@@ -17,18 +14,11 @@ import psutil
 from sklearn.preprocessing import StandardScaler, normalize
 from joblib import Parallel, delayed
 
-if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
-    from helper.classical_RSA import flatten_matrix#, make_RDM
-    from helper.data_splitter import data_splitter
-    from helper.predictor_distance import hadamard, sqeuclidean
-    from fitting.scoring import scoring#, scoring_classical
-    from fitting.fitting import regularized_model, find_hyperparameters, final_model
-else:
-    from frrsa.frrsa.helper.classical_RSA import flatten_matrix#, make_RDM
-    from frrsa.frrsa.helper.data_splitter import data_splitter
-    from frrsa.frrsa.helper.predictor_distance import hadamard, sqeuclidean
-    from frrsa.frrsa.fitting.scoring import scoring#, scoring_classical
-    from frrsa.frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
+from helper.classical_RSA import flatten_matrix#, make_RDM
+from helper.data_splitter import data_splitter
+from helper.predictor_distance import hadamard, sqeuclidean
+from fitting.scoring import scoring#, scoring_classical
+from fitting.fitting import regularized_model, find_hyperparameters, final_model
 
 
 def frrsa(target,

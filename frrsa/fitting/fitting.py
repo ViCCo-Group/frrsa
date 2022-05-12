@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Spyder 4.2.5 | Python 3.8.8 64-bit | Qt 5.9.7 | PyQt5 5.9.2 | Darwin 18.7.0
 """
 Contains wrapper functions for fitting regularized regression models.
 
@@ -10,16 +9,12 @@ only L2-regularization). Used in the `crossvalidation` module.
 @author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
 """
 
-import os
-from pathlib import Path
 import numpy as np
+
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 
-if ('dev' not in str(Path(os.getcwd()).parent)) and ('draco' not in str(Path(os.getcwd()).parent)) and ('cobra' not in str(Path(os.getcwd()).parent)):
-    from fitting.fracridge import fracridge
-else:
-    from frrsa.frrsa.fitting.fracridge import fracridge
+from fitting.fracridge import fracridge
 
 
 def count_targets(y):
