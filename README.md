@@ -8,7 +8,7 @@ This repository provides a Python package to run Feature-Reweighted Representati
 ## Getting Started
 
 ### Prerequisites
-The package is written in Python 3.8. You can find an exhaustive package list in the [conda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/conda_env_frrsa.yml) which you should use to [create a conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) before using `frrsa`.
+The package is written in Python 3.8. You can find an exhaustive package list in the [conda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/environment.yml) which you should deploy to [create a conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) before using `frrsa`.
 
 ### Installing
 For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`). Then, you could set up e.g. via Python:
