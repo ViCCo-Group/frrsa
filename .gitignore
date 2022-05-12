@@ -140,9 +140,4 @@ cython_debug/
 
 
 # Local specifics
-organisation/
-presentations/
-todo.txt
-archive_scripts/
-anaconda_env/
 conda_env/
