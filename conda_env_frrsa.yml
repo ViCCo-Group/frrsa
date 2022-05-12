@@ -1,4 +1,4 @@
-name: conda_env
+name: frrsa
 channels:
   - defaults
   - conda-forge

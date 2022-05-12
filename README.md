@@ -8,23 +8,23 @@ This repository provides a Python package to run Feature-Reweighted Representati
 ## Getting Started
 
 ### Prerequisites
-The package is written in Python 3 using the [Anaconda distribution for Python](https://www.anaconda.com/distribution/#download-section). You can find an exhaustive package list in the [Anaconda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/anaconda_env_specs_frrsa.yml) which you should use to [create an Anaconda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file).
+The package is written in Python 3.8. You can find an exhaustive package list in the [conda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/conda_env_frrsa.yml) which you should use to [create a conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) before using `frrsa`.
 
 ### Installing
-For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`). Then, you could set up via Python:
+For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`). Then, you could set up e.g. via Python:
 
 ```py
 import os
 top_folder = "/User/desired/top/folder/frrsa"
 os.system(f'git clone https://github.com/ViCCo-Group/frrsa.git {top_folder}')
-# create Anaconda environment.
-# activate Anaconda environment.
+# create conda environment.
+# activate conda environment.
 ```
 
 ### How to use
 See [frrsa/test.py](https://github.com/PhilippKaniuth/frrsa/blob/master/frrsa/test.py) for a simple demonstration of how to use the package.
 
-Activate the Anaconda environment, temporarily append to your Python's sys.path, and then import the main function to call it with your loaded matrices.
+Activate the conda environment, temporarily append to your Python's sys.path, and then import the main function to call it with your loaded matrices.
 
 ```py
 import sys
