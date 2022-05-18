@@ -87,17 +87,18 @@ Long story short: If you have 14 or more conditions, you can (but don't have to)
 
 
 ## Citation
-If you use `frrsa` (or any of its modules), please cite our [associated preprint](https://www.biorxiv.org/content/10.1101/2021.09.27.462005v2) as follows:
+If you use `frrsa` (or any of its modules), please cite our [associated paper](https://www.sciencedirect.com/science/article/pii/S105381192200413X) as follows:
 
 ```
-@article{Kaniuth_preprint_2021,
-        author = {Kaniuth, Philipp and Hebart, Martin N.},
-        title = {Feature-reweighted representational similarity analysis: A method for improving the fit between computational models, brains, and behavior},
-        journal = {bioRxiv},
-        pages = {2021.09.27.462005},
-        year = {2021},
-        doi = {10.1101/2021.09.27.462005},
-        URL = {https://www.biorxiv.org/content/10.1101/2021.09.27.462005v3}
+@article{KANIUTH2022119294,
+         author = {Philipp Kaniuth and Martin N. Hebart},
+         title = {Feature-reweighted representational similarity analysis: A method for improving the fit between computational models, brains, and behavior},
+         journal = {NeuroImage},
+         pages = {119294},
+         year = {2022},
+         issn = {1053-8119},
+         doi = {https://doi.org/10.1016/j.neuroimage.2022.119294},
+         url = {https://www.sciencedirect.com/science/article/pii/S105381192200413X}
 }
 ```
 
