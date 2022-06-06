@@ -14,11 +14,11 @@ import psutil
 from sklearn.preprocessing import StandardScaler, normalize
 from joblib import Parallel, delayed
 
-from helper.classical_RSA import flatten_matrix#, make_RDM
-from helper.data_splitter import data_splitter
-from helper.predictor_distance import hadamard, sqeuclidean
-from fitting.scoring import scoring#, scoring_classical
-from fitting.fitting import regularized_model, find_hyperparameters, final_model
+from frrsa.helper.classical_RSA import flatten_matrix#, make_RDM
+from frrsa.helper.data_splitter import data_splitter
+from frrsa.helper.predictor_distance import hadamard, sqeuclidean
+from frrsa.fitting.scoring import scoring#, scoring_classical
+from frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
 
 
 def frrsa(target,

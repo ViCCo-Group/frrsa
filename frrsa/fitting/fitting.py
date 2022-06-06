@@ -14,7 +14,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import Ridge
 
-from fitting.fracridge import fracridge
+from frrsa.fitting.fracridge import fracridge
 
 
 def count_targets(y):
