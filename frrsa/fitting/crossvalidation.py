@@ -67,7 +67,7 @@ def frrsa(target,
         are: 'minkowski', 'cityblock', 'euclidean', 'mahalanobis', 'cosine_dis',
         'pearson_dis', 'spearman_dis', and 'decoding_dis', and its possible
         similarity measure options are 'cosine_sim', 'pearson_sim', 'spearman_sim',
-        and 'decoding_sim'.
+        'decoding_sim', and 'spose_sim'.
     cv : list, optional
         A list of integers, where the first integer indicates the fold size of
         the outer crossvalidation and the second integer indicates often the
@@ -182,7 +182,7 @@ def frrsa(target,
     
     allowed_target_measures = ['minkowski', 'cityblock', 'euclidean', 'mahalanobis',
                                'cosine_dis', 'pearson_dis', 'spearman_dis', 'cosine_sim',
-                               'pearson_sim', 'spearman_sim', 'decoding_dis', 'decoding_sim']
+                               'pearson_sim', 'spearman_sim', 'decoding_dis', 'decoding_sim', 'spose_sim']
     if measures[1] not in allowed_target_measures:
         sys.exit(f'The second element of "measures" that you provided is "{measures[1]}", \
                  but it must be one of {allowed_target_measures}.')
@@ -889,6 +889,9 @@ def fit_and_score(predictor,
     elif measures[1] in ['decoding_dis', 'decoding_sim']:
         y_pred[y_pred < 0] = 0
         y_pred[y_pred > 100] = 100
+    elif measures[1] in ['spose_sim']:
+        y_pred[y_pred < 0] = 0
+        y_pred[y_pred > 1] = 1
     score = scoring(y_test, y_pred, score_type=score_type)
     return score, first_pair_idx, second_pair_idx, y_pred, y_test
 
