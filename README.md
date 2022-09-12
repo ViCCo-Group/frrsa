@@ -29,7 +29,7 @@ Activate the conda environment, temporarily append to your Python's sys.path, an
 ```py
 import sys
 top_folder = "/User/desired/top/folder/frrsa"
-sys.path.append(f'{top_folder}/frrsa')
+sys.path.append(f'{top_folder}')
 from frrsa.fitting.crossvalidation import frrsa
 
 # load your "target" RDM or RSM.
