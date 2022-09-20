@@ -1,4 +1,4 @@
-[![Unittests](https://github.com/PhilippKaniuth/frrsa/actions/workflows/tests.yml/badge.svg)](https://github.com/PhilippKaniuth/frrsa/actions/workflows/tests.yml) ![Maintenance](https://img.shields.io/maintenance/yes/2022) ![License](https://img.shields.io/badge/license-AGPL--3.0-blue) ![Python](https://img.shields.io/badge/python-3.7%20%7C%203.8-blue)
+[![Unittests](https://github.com/PhilippKaniuth/frrsa/actions/workflows/tests.yml/badge.svg)](https://github.com/PhilippKaniuth/frrsa/actions/workflows/tests.yml) ![Maintenance](https://img.shields.io/maintenance/yes/2022) ![License](https://img.shields.io/badge/license-AGPL--3.0-blue) ![Python](https://img.shields.io/badge/python-3.8-blue)
 
 # frrsa
 
