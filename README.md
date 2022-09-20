@@ -8,29 +8,23 @@ This repository provides a Python package to run Feature-Reweighted Representati
 ## Getting Started
 
 ### Prerequisites
-The package is written in Python 3.8. You can find an exhaustive package list in the [conda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/environment.yml) which you should deploy to [create a conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) before using `frrsa`.
+The package is written in Python 3.8. You can find an exhaustive package list in the [conda environment file](https://github.com/PhilippKaniuth/frrsa/blob/master/environment.yml) which you should include when [creating the conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file) in which you intend to use `frrsa`.
 
 ### Installing
-For now, since no setup.py exists yet, just download the package to a location of your choosing (`top_folder`). Then, you could set up e.g. via Python:
-
-```py
-import os
-top_folder = "/User/desired/top/folder/frrsa"
-os.system(f'git clone https://github.com/ViCCo-Group/frrsa.git {top_folder}')
-# create conda environment.
-# activate conda environment.
+After you created the conda environment, execute the following lines to clone this repository and install the package using pip.
+```bash
+git clone https://github.com/ViCCo-Group/frrsa
+cd frrsa
+pip install -e .
 ```
 
 ### How to use
-See [frrsa/test.py](https://github.com/PhilippKaniuth/frrsa/blob/master/frrsa/test.py) for a simple demonstration of how to use the package.
+See [frrsa/test.py](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/test.py) for a simple demonstration of how to use the package.
 
-Activate the conda environment, temporarily append to your Python's sys.path, and then import the main function to call it with your loaded matrices.
+Activate the conda environment and then import the main function to call it with your loaded matrices.
 
 ```py
-import sys
-top_folder = "/User/desired/top/folder/frrsa"
-sys.path.append(f'{top_folder}')
-from frrsa.fitting.crossvalidation import frrsa
+from frrsa import frrsa
 
 # load your "target" RDM or RSM.
 # load your "predictor" data.
