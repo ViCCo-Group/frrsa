@@ -9,8 +9,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 requirements = [
                 'matplotlib==3.5.2',
                 'joblib==1.0.*',
-                'numba==0.51.*',
                 'numpy==1.21.*',
+                'numba==0.51.*',
                 'pandas==1.3.*',
                 'psutil==5.8.*',
                 'scikit-learn==1.0.*',
