@@ -7,14 +7,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 requirements = [
-                'matplotlib==3.5.2',
-                'joblib==1.0.*',
-                'numpy==1.21.*',
-                'numba==0.51.*',
-                'pandas==1.3.*',
-                'psutil==5.8.*',
-                'scikit-learn==1.0.*',
-                'scipy==1.7.*'
+                'joblib==1.2.*',
+                'numpy==1.23.*',
+                'numba==0.56.*',
+                'pandas==1.5.*',
+                'psutil==5.9.*',
+                'scikit-learn==1.1.*',
+                'scipy==1.9.*'
                 ]
 
 setuptools.setup(
