@@ -3,6 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
+  - pip
   - joblib=1.2.*
   - numba=0.56.*
   - numpy=1.23.*
