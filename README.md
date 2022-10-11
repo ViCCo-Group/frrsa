@@ -8,7 +8,7 @@ This repository provides a Python package to run Feature-Reweighted Representati
 ## Getting Started
 
 ### Prerequisites
-The package is written in Python 3.8. Installation expects you to have a working `conda` on your system (e.g. via `miniconda`). 
+The package is written in Python 3.8. Installation expects you to have a working `conda` on your system (e.g. via `miniconda`). If you have `pip` available already, you can skip the `conda env create` part.
 
 ### Installing
 Execute the following lines from a terminal to clone this repository and install the package using pip.
