@@ -5,12 +5,8 @@ Demonstration script for running 'frrsa'.
 
 @author: Philipp Kaniuth (kaniuth@cbs.mpg.de)
 """
-# Uncomment the three lines below and change 'top_folder' to where you have downloaded frrsa.
-# import sys
-# top_folder = "/User/desired/top/folder/frrsa"
-# sys.path.append(f'{top_folder}/frrsa')
 from numpy.random import default_rng
-from frrsa.fitting.crossvalidation import frrsa
+from frrsa import frrsa
 
 # Simulate target Representational Matrix and predictor data.
 rng = default_rng()
