@@ -77,7 +77,7 @@ scores, predicted_matrix, betas, predictions = frrsa(target,
                                                      cv=[5, 10],
                                                      hyperparams=None,
                                                      score_type='pearson',
-                                                     wanted=[],
+                                                     wanted=['predicted_matrix', 'betas', 'predictions'],
                                                      parallel='1',
                                                      random_state=None)
 ```                                            
