@@ -93,7 +93,7 @@ There are default values for all parameters, which we partly assessed (see our [
 #### Returned objects.
 1. `scores`: Holds the the representational correspondency scores between each target and the predictor. These scores can be sensibly used in downstream analyses.
 2. `predicted_matrix`: The reweighted predicted representational matrix averaged across outer folds with shape (n_conditions, n_conditions, n_targets). The value `9999` denotes condition pairs for which no (dis-)similarity was predicted ([why?](#in-the-returned-predicted_matrix-why-are-there-some-condition-pairs-for-which-there-are-no-predicted-dis-similarities)). This matrix should only be used for visualizational purposes.
-3. `betas`: Holds the weights for each target's measurement channel with the shape (n_conditions, n_targets). Note that the first weight for each target is not a channel-weight but an offset. These betas are currently computed suboptimally and should only be used for informational purposes. Do *not* use them to recreate your `reweighted_matrix` or to reweight something else (see [#43](/../../issues/43)).
+3. `betas`: Holds the weights for each target's measurement channel with the shape (n_conditions, n_targets). Note that the first weight for each target is not a channel-weight but an offset. These betas are currently computed suboptimally and should only be used for informational purposes. Do *not* use them to recreate the `reweighted_matrix` or to reweight something else (see [#43](/../../issues/43)).
 4. `predictions`: Holds (dis-)similarities for the target and for the predictor, and to which condition pairs they belong, for all cross-validations and targets separately. This is a potentially very large object. Only request if you really need it. For an explanation of the columns see the [docstring](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/fitting/crossvalidation.py#L121).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -121,15 +121,27 @@ To conduct a proper cross-validation that does not lead to leakge, one needs to 
 
 <!-- Known Issues -->
 ## :spiral_notepad: Known issues
-1. If your data has less than 9 conditions, **`frrsa` cannot be executed successfully**. <br/> Why? Because the data (i.e. `target` and `predictor`) are split along the condition dimension to conduct the nested cross-validation. Therefore, there exists an absolute lower bound for the number of conditions below which inner test folds will occur that contain data from just two conditions, which would lead to just one predicted (dis-)similarity (for one condition pair). However, to determine the goodness-of-fit, currently the predicted (dis-)similarities of each cross-validation are _correlated_ with the respective target (dis-)similarities. This does not work with vectors that have a length < 2. This won't be fixed, see [#28](/../../issues/28).
+1. If your data has less than 9 conditions, **`frrsa` cannot be executed successfully**. This won't be fixed, see [#28](/../../issues/28) <br/> 
+    <details><summary>Expand if you want to know why.</summary> 
+    
+    Because the data (i.e. `target` and `predictor`) are split along the condition dimension to conduct the nested cross-validation. Therefore, there exists an absolute lower bound for the number of conditions below which inner test folds will occur that contain data from just two conditions, which would lead to just one predicted (dis-)similarity (for one condition pair). However, to determine the goodness-of-fit, currently the predicted (dis-)similarities of each cross-validation are _correlated_ with the respective target (dis-)similarities. This does not work with vectors that have a length < 2.
+    
+    </details>
 
-2. The default fold size, `outer_k`, for the outer crossvalidation is 5 (denoted by the first element of `cv`). In that case, the minimum number of conditions needed is 14. <br/> (This is due to the inner workings of [data_splitter](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/helper/data_splitter.py). It uses [sklearn.model_selection.ShuffleSplit](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.ShuffleSplit.html) which allows to specifically set the proportion of the current dataset to be included in the test fold. This proportion is set to _1/outer_k_ (due to historical reasons, so that it was comparable to `splitter='kfold'`, see [#26](/../../issues/26). Therefore, when there are 14 conditions, this leads to an outer test fold size of 2.8 ≈ 3, and to an outer training fold size of (14-3)=11. This in turn guarantees an inner test fold size of 2.2 ≈ 3 (note that the sklearn's SuffleSplit function rounds up).). <br/> However, if there are only 13 or less conditions and `outer_k` is set to 5, still 2.6 ≈ 3 conditions are allocated to an outer test fold, but that leads to an outer training fold size of (13-3)=10 which leads to inner test folds sizes of only 2, which wouldn't work as explained above. Therefore:
+2. The default fold size, `outer_k`, for the outer crossvalidation is 5 (denoted by the first element of `cv`). In that case, the minimum number of conditions needed is 14. <br/> 
+    <details><summary>Expand for details.</summary> 
+    
+    (This is due to the inner workings of [data_splitter](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/helper/data_splitter.py). It uses [sklearn.model_selection.ShuffleSplit](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.ShuffleSplit.html) which allows to specifically set the proportion of the current dataset to be included in the test fold. This proportion is set to _1/outer_k_ (due to historical reasons, so that it was comparable to `splitter='kfold'`, see [#26](/../../issues/26). Therefore, when there are 14 conditions, this leads to an outer test fold size of 2.8 ≈ 3, and to an outer training fold size of (14 - 3) = 11. This in turn guarantees an inner test fold size of 2.2 ≈ 3 (note that the sklearn's SuffleSplit function rounds up).). <br/>
+    
+    </details>
+    
+    However, if there are only 13 or less conditions and `outer_k` is set to 5, 2.6 ≈ 3 conditions are allocated to an outer test fold, but that leads to an outer training fold size of (13 - 3) = 10 which leads to inner test folds sizes of only 2, which wouldn't work (as explained in 1.). Therefore:
 
 3. If your data has between 9 and 13 conditions, `frrsa` will run. However, the default `outer_k` and the hard-coded `inner_k` will be adapted automatically (see [#22](/../../issues/22)).
 
 4. There are other combinations of `outer_k` and the number of conditions (also when the number of conditions is bigger than 14) that would yield too few (inner or outer) test conditions if unchanged, but could be executed successfully otherwise. Therefore, in these cases, `outer_k` and `inner_k` will be adapted automatically (see [#17](/../../issues/17)).
 
-Long story short: If you have 14 or more conditions, you can (but don't have to) use the default value for `outer_k` which has been used for many analyses (in our [paper](https://www.sciencedirect.com/science/article/pii/S105381192200413X)). If you have less than 14 but more than 8 conditions, you can use `frrsa`, just not with `outer_k = 5`. No luck for you if you only have 8 or fewer conditions.
+5. The optionally returned `betas` are currently computed suboptimally and should only be used for informational purposes. Do *not* use them to recreate the `reweighted_matrix` or to reweight something else (see #43).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
