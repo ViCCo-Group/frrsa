@@ -122,9 +122,9 @@ To conduct a proper cross-validation that does not lead to leakge, one needs to 
 <!-- Known Issues -->
 ## :spiral_notepad: Known issues
 1. If your data has less than 9 conditions, **`frrsa` cannot be executed successfully**. This won't be fixed, see [#28](/../../issues/28) <br/> 
-    <details><summary>Expand if you want to know why.</summary> 
+    <details><summary>Expand for details.</summary> 
     
-    Because the data (i.e. `target` and `predictor`) are split along the condition dimension to conduct the nested cross-validation. Therefore, there exists an absolute lower bound for the number of conditions below which inner test folds will occur that contain data from just two conditions, which would lead to just one predicted (dis-)similarity (for one condition pair). However, to determine the goodness-of-fit, currently the predicted (dis-)similarities of each cross-validation are _correlated_ with the respective target (dis-)similarities. This does not work with vectors that have a length < 2.
+    The data (i.e. `target` and `predictor`) are split along the condition dimension to conduct the nested cross-validation. Therefore, there exists an absolute lower bound for the number of conditions below which inner test folds will occur that contain data from just two conditions, which would lead to just one predicted (dis-)similarity (for one condition pair): this absolute lower bound is 9. However, to determine the goodness-of-fit, currently the predicted (dis-)similarities of each cross-validation are _correlated_ with the respective target (dis-)similarities. This does not work with vectors that have a length < 2.
     
     </details>
 
