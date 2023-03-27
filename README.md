@@ -23,6 +23,7 @@
 - [Getting started](#running-getting-started)
   * [Installing](#computer-installing)
   * [How to use](#mag-how-to-use)
+  * [Parameters & Returned objects](#repeat-parameters-and-returned-objects)
 - [FAQ](#question-faq)
 - [Known issues](#spiral_notepad-known-issues)
 - [Contributing](#wave-how-to-contribute)
@@ -83,6 +84,18 @@ scores, predicted_matrix, betas, predictions = frrsa(target,
 ```                                            
 See [frrsa/test.py](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/test.py) for another simple demonstration.
 
+<!--params-and-returned-->
+### :repeat: Parameters and returned objects
+
+#### Parameters.
+There are default values for all parameters, which we partly assessed (see our [paper](https://www.sciencedirect.com/science/article/pii/S105381192200413X)). However, you can input custom parameters as you wish. For an explanation of all parameters please see [the docstring](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/fitting/crossvalidation.py#L41).
+
+#### Returned objects.
+1. `scores`: Holds the the representational correspondency scores between each target and the predictor. These scores can be sensibly used in downstream analyses.
+2. `predicted_matrix`: The reweighted predicted representational matrix averaged across outer folds with shape (n_conditions, n_conditions, n_targets). The value `9999` denotes condition pairs for which no (dis-)similarity was predicted ([why?](#in-the-returned-predicted_matrix-why-are-there-some-condition-pairs-for-which-there-are-no-predicted-dis-similarities)). This matrix should only be used for visualizational purposes.
+3. `betas`: Holds the weights for each target's measurement channel with the shape (n_conditions, n_targets). Note that the first weight for each target is not a channel-weight but an offset. These betas are currently computed suboptimally and should only be used for informational purposes. Do *not* use them to recreate your `reweighted_matrix` or to reweight something else (see #43).
+4. `predictions`: Holds (dis-)similarities for the target and for the predictor, and to which condition pairs they belong, for all cross-validations and targets separately. This is a potentially very large object. Only request if you really need it. For an explanation of the columns see the [docstring](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/fitting/crossvalidation.py#L121).
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -101,8 +114,8 @@ As of now, only L2-regularization aka Ridge Regression.
 If you set the parameter `nonnegative` to `False`, L2-regularization is implemented using Fractional Ridge Regression (FRR; [Rokem & Kay, 2020](https://pubmed.ncbi.nlm.nih.gov/33252656/)). One advantage of FRR is that the hyperparameter to be optimized is the fraction between ordinary least squares and L2-regularized regression coefficients, which ranges between 0 and 1. Hence, FRR allows assessing the full range of possible regularization parameters. In the context of FR-RSA, twenty evenly spaced values between 0.1 and 1 are pre-set. If you want to specify custom regularization values that shall be assessed, you are able to do so by providing a list of candidate values as the `hyperparams` argument of the frrsa function. <br/> If you set the parameter `nonnegative` to `True`,  L2-regularization is currently implemented using Scikit-Learn functions. They have the disadvantage that one has to define the hyperparameter space oneself, which can be tricky. If you do not provide hyerparameter candidates yourself, [14 pre-set values](https://github.com/ViCCo-Group/frrsa/blob/0b6d7ab35d9eb6962bc6a4eeabfb2b8e345a9969/frrsa/fitting/crossvalidation.py#L142) will be used which *might* be sufficient (see our [paper](https://www.sciencedirect.com/science/article/pii/S105381192200413X)).
 #### _Which (dis-)similarity `measures` can be used?_
 The parameter `measures` is a list that expects two strings. The first string lets you choose which (dis-)similarity measure will be computed within each feature of the predictor. It has two possible options: (1) `'dot'` denotes the dot-product, a similarity measure; (2) `'sqeuclidean'` denotes the squared euclidean distance, a dissimilarity measure. The second string must be set to indicate which measure had been used to create the target matrix. Its possible dissimilarity measure options are: `'minkowski'`, `'cityblock'`, `'euclidean'`, `'mahalanobis'`, `'cosine_dis'`, `'pearson_dis'`, `'spearman_dis'`, and `'decoding_dis'`, and its possible similarity measure options are `'cosine_sim'`, `'pearson_sim'`, `'spearman_sim'`, `'decoding_sim'`, and `'spose_sim`'. <br/> Which measure you should choose for the predictor depends on your data. Additionally, if your `target` holds similarities, it is likely more intuitive to select `'dot'` (to have similarities on both sides of the equation). If, though, your `target` holds dissimilarities, it might conversely be more intuitive to select `'sqeuclidean'`.
-#### _What else? What objects does the function return? Are there other parameters I can specify when running FR-RSA?_
-There are default values for all parameters, which we partly assessed (see our [paper](https://www.sciencedirect.com/science/article/pii/S105381192200413X)). However, you can input custom parameters as you wish. For now, see the [respective docstring](https://github.com/ViCCo-Group/frrsa/blob/master/frrsa/fitting/crossvalidation.py#L35) for an explanation of all returned objects. A more elaborate documentation in this `README` might appear in the future.
+#### _In the returned `predicted_matrix`, why are there some condition pairs for which there are no predicted (dis-)similarities?_
+WIP.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
