@@ -141,7 +141,7 @@ To conduct a proper cross-validation that does not lead to leakge, one needs to 
 
 4. There are other combinations of `outer_k` and the number of conditions (also when the number of conditions is bigger than 14) that would yield too few (inner or outer) test conditions if unchanged, but could be executed successfully otherwise. Therefore, in these cases, `outer_k` and `inner_k` will be adapted automatically (see [#17](/../../issues/17)).
 
-5. The optionally returned `betas` are currently computed suboptimally and should only be used for informational purposes. Do *not* use them to recreate the `reweighted_matrix` or to reweight something else (see #43).
+5. The optionally returned `betas` are currently computed suboptimally and should only be used for informational purposes. Do *not* use them to recreate the `reweighted_matrix` or to reweight something else (see [#43](/../../issues/43)).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
