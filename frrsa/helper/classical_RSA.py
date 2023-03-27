@@ -13,7 +13,7 @@ from scipy.spatial.distance import pdist
 
 
 def make_RDM(activity_pattern_matrix, distance='pearson'):
-    #SOFT-DEPRECATED
+    # SOFT-DEPRECATED
     """Compute dissimilarity matrix.
 
     Parameters

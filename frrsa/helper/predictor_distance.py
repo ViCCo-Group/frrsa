@@ -25,19 +25,22 @@ def check_predictor_data(predictor):
 
 
 def calculate_pair_indices(n_conditions):
-    """Calculate the indices in the original predictor data of the first and second member of a pair.
+    """Calculate the indices in the original predictor data of the first
+    and second member of a pair.
 
     Parameters
     ----------
     n_conditions : int
         Amount of conditions in the original predictor.
-        
+
     Returns
     -------
     first_pair_members : ndarray
-        Indices of the first elements of all possible pairs of for `n_conditions` conditions.
+        Indices of the first elements of all possible pairs of for
+        `n_conditions` conditions.
     second_pair_members : ndarray
-        Indices of the second elements of all possible pairs of for `n_conditions` conditions.
+        Indices of the second elements of all possible pairs of for
+        `n_conditions` conditions.
     """
     pairs = np.array(list((itertools.combinations(range(n_conditions), 2))))
     first_pair_members = pairs[:, 0]

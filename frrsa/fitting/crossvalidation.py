@@ -14,10 +14,10 @@ import psutil
 from sklearn.preprocessing import StandardScaler, normalize
 from joblib import Parallel, delayed
 
-from frrsa.helper.classical_RSA import flatten_matrix#, make_RDM
+from frrsa.helper.classical_RSA import flatten_matrix  # , make_RDM
 from frrsa.helper.data_splitter import data_splitter
 from frrsa.helper.predictor_distance import hadamard, sqeuclidean
-from frrsa.fitting.scoring import scoring#, scoring_classical
+from frrsa.fitting.scoring import scoring  # , scoring_classical
 from frrsa.fitting.fitting import regularized_model, find_hyperparameters, final_model
 
 
@@ -34,17 +34,17 @@ def frrsa(target,
           random_state=None):
     """Conduct repeated, nested, cross-validated FR-RSA.
 
-    This high-level wrapper function conducts some preparatory data processing,
-    calls the function actually doing the work, and finally reorganizes output
-    data in easily processable data objects.
+    This high-level wrapper function conducts some preparatory data
+    processing, calls the function actually doing the work, and finally
+    reorganizes output data in easily processable data objects.
 
     Parameters
     ----------
     target : ndarray
-        The representational matrix (either an RDM or RSM) which shall be predicted.
-        Expected shape is (n_conditions, n_conditions, n_targets), where `n_targets`
-        denotes the number of target matrices. If `n_targets == 1`, `targets` can be
-        of shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall
+        be predicted. Expected shape is (n_conditions, n_conditions, n_targets),
+        where `n_targets` denotes the number of target matrices. If
+        `n_targets == 1`, `targets` can be of shape (n_conditions, n_conditions).
     predictor : ndarray
         The data that shall be used as a predictor. Expected shape is
         (n_channels, n_conditions). For each channel, a separate representational
@@ -57,7 +57,7 @@ def frrsa(target,
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
     measures : list
-        A list of two strings that indicate (dis-)similarity measures. The 
+        A list of two strings that indicate (dis-)similarity measures. The
         first string indicates which (dis-)similarity measure shall be computed
         within each feature of the predictor. It has two possible options: (1)
         'dot' denotes the dot-product, a similarity measure; (2) 'sqeuclidean'
@@ -70,8 +70,8 @@ def frrsa(target,
         'decoding_sim', and 'spose_sim'.
     cv : list, optional
         A list of integers, where the first integer indicates the fold size of
-        the outer crossvalidation and the second integer indicates often the
-        outer k-fold is repeated (defaults to [5, 10]).
+        the outer cross-validation and the second integer indicates how often the
+        outer cross-validation shall be repeated (defaults to [5, 10]).
     hyperparams : array-like, optional
         The hyperparameter candidates to evaluate in the regularization scheme
         (defaults to `None`). Should be in strictly ascending order.
@@ -110,14 +110,15 @@ def frrsa(target,
 
     predicted_matrix : ndarray, optional
         The reweighted predicted representational matrix averaged across outer
-        folds with shape (n_conditions, n_conditions, n_targets). The value `9999` denotes
-        condition pairs for which no (dis-)similarity was predicted.
+        folds with shape (n_conditions, n_conditions, n_targets).
+        The value `9999` denotes condition pairs for which no (dis-)similarity
+        was predicted.
 
     betas : pd.DataFrame, optional
         Holds the weights for each target's measurement channel with the shape
-        (n_conditions, n_targets). Note that the first weight for each target is
-        not a channel-weight but an offset.
-        
+        (n_conditions, n_targets). Note that the first weight for each target
+        is not a channel-weight but an offset.
+
     predictions : pd.DataFrame, optional
         Holds (dis-)similarities for the target and for the predictor,
         and to which condition pairs they belong, for all folds and targets
@@ -134,7 +135,7 @@ def frrsa(target,
         ================   ==============================================================================
     """
     splitter = 'random'
-    
+
     # Check 'target'.
     if target.shape[0] != target.shape[1]:
         sys.exit('Your "target" is not a symmetrical matrix. Its shape must be \
@@ -155,7 +156,7 @@ def frrsa(target,
               If it is though, you should abort. Continuing...')
     if predictor.ndim != 2:
         sys.exit('Your "predictor" is of shape {predictor.shape}. It must be 2d.')
-                 
+
     # Check 'preprocess'.
     if type(preprocess) != bool:
         sys.exit('The parameter "preprocess" must be of type bool.')
@@ -179,7 +180,7 @@ def frrsa(target,
     if measures[0] not in allowed_predictor_measures:
         sys.exit(f'The first element of "measures" that you provided is "{measures[0]}", \
                  but it must be one of {allowed_predictor_measures}.')
-    
+
     allowed_target_measures = ['minkowski', 'cityblock', 'euclidean', 'mahalanobis',
                                'cosine_dis', 'pearson_dis', 'spearman_dis', 'cosine_sim',
                                'pearson_sim', 'spearman_sim', 'decoding_dis', 'decoding_sim', 'spose_sim']
@@ -187,7 +188,8 @@ def frrsa(target,
         sys.exit(f'The second element of "measures" that you provided is "{measures[1]}", \
                  but it must be one of {allowed_target_measures}.')
 
-    if (measures[0]=='dot' and 'sim' not in measures[1]) or (measures[0]=='sqeuclidean' and 'sim' in measures[1]):
+    if (measures[0] == 'dot' and 'sim' not in measures[1]) or \
+       (measures[0] == 'sqeuclidean' and 'sim' in measures[1]):
         print(f'The first argument of "measures" that you provided is "{measures[0]}" (a similarity) \
               while the second is "{measures[1]}" (a dissimilarity). This might yield confusing results. \
               You might want to abort and choose a (dis-)similarity for both. \n\
@@ -218,12 +220,12 @@ def frrsa(target,
             hyperparams = [1e-1, 1e0, 1e1, 5e1, 1e2, 5e2, 1e3, 4e3, 7e3, 1e4, 3e4, 5e4, 7e4, 1e5]
         print(f'You did not provide hyperparams. We chose {hyperparams} for you.\n\
               Continuing...')
-              
+
     if not hasattr(hyperparams, "__len__"):
         hyperparams = [hyperparams]
-        
+
     hyperparams = np.array(hyperparams)
-    
+
     if len(hyperparams) == 1:
         print(f'You only provided one value within "hyperparam", namely {hyperparams}.\n\
               That doesn\'t seem right...\n\
@@ -244,7 +246,7 @@ def frrsa(target,
     allowed_score_types = ['pearson', 'spearman']
     if score_type not in allowed_score_types:
         sys.exit(f'Your "score_type" is "{score_type}". But it must be one of {allowed_score_types}.')
-    
+
     # Check 'wanted'.
     if type(wanted) != list:
         sys.exit('The parameter "wanted" must be a list.')
@@ -252,7 +254,7 @@ def frrsa(target,
         sys.exit('All elements of "wanted" must be strings.')
     if not wanted:
         print('You did not request additional outputs. You will only receive "scores". Continuing...')
-        
+
     # Check 'parallel'.
     if type(parallel) != str:
         sys.exit('The parameter "parallel" must be a string.')
@@ -260,7 +262,7 @@ def frrsa(target,
         parallel = psutil.cpu_count(logical=False)
     else:
         parallel = int(parallel)
-        
+
     # Check 'random_state'.
     if random_state:
         print('You set "random_state". This will fix the randomness across runs. Continuing...')
@@ -286,7 +288,7 @@ def frrsa(target,
 
     targets = np.array(list(range(n_targets)) * n_outer_cvs)
     scores = pd.DataFrame(data=np.array([score, fold, hyperparameter, targets]).T,
-                                     columns=['score', 'fold', 'hyperparameter', 'target'])
+                          columns=['score', 'fold', 'hyperparameter', 'target'])
 
     if 'predictions' in wanted:
         predictions = pd.DataFrame(data=np.delete(predictions, 0, 0),
@@ -346,41 +348,42 @@ def start_outer_cross_validation(n_conditions,
         The number of conditions.
     splitter : str
         How the data shall be split. If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up. Soft-deprecated.
+        is split randomly. If `kfold`, a classical k-fold is set up.
+        Soft-deprecated.
     random_state : int
-        State of the randomness (defaults to `None`). Should only be set for
-        testing purposes. If set, leads to reproducible output across multiple
-        function calls.
+        State of the randomness (defaults to `None`). Should only be set
+        for testing purposes. If set, leads to reproducible output
+        across multiple function calls.
     outer_k : int
-        The fold size of the outer crossvalidation.
+        The fold size of the outer cross-validation.
     outer_reps : int
         How often the outer k-fold is repeated.
     n_targets : int
         Denotes the number of targets.
     predictor : ndarray
         The data that shall be used as a predictor. Expected shape is
-        (n_channels, n_conditions). For each channel, a separate representational
-        matrix will be computed and reweighted.
+        (n_channels, n_conditions). For each channel, a separate
+        representational matrix will be computed and reweighted.
     target : ndarray
-        The representational matrix (either an RDM or RSM) which shall be predicted.
-        Expected shape is (n_conditions, n_conditions, n_targets), where `n_targets`
-        denotes the number of target matrices. If `n_targets == 1`, `targets` can be
-        of shape (n_conditions, n_conditions).
+        The representational matrix (either an RDM or RSM) which shall
+        be predicted. Expected shape is (n_conditions, n_conditions, n_targets),
+        where `n_targets` denotes the number of target matrices. If
+        `n_targets == 1`, `targets` can be of shape (n_conditions, n_conditions).
     score_type : str
         Type of association measure to compute between predictor and target.
     hyperparams : array-like
         The hyperparameter candidates to evaluate in the regularization scheme.
     n_outer_cvs : int
-        Denotes how many outer crossvalidations are conducted in total.
+        Denotes how many outer cross-validations are conducted in total.
     parallel : int
-        Number of parallel jobs that shall be set up to parallelize the outer
-        cross-validation
+        Number of parallel jobs that shall be set up to parallelize the
+        outer cross-validation
     wanted : list
         A list of strings that indicate which output the user wants the
         function to return.
     measures : list
-        A list of two strings that indicate (dis-)similarity measures used for
-        the predictor and target.
+        A list of two strings that indicate the (dis-)similarity measures
+        used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
@@ -402,7 +405,8 @@ def start_outer_cross_validation(n_conditions,
         folds with shape (n_conditions, n_conditions, n_targets).
     predicted_matrix_counter : ndarray
         A counter of how often a (dis-)similarity for specific condition-pair
-        has been predicted across outer folds. Shape is (n_conditions, n_conditions, n_targets).
+        has been predicted across outer folds.
+        Shape is (n_conditions, n_conditions, n_targets).
     """
     if 'predicted_matrix' in wanted:
         predicted_matrix = np.zeros((n_conditions, n_conditions, n_targets))
@@ -433,16 +437,16 @@ def start_outer_cross_validation(n_conditions,
             outer_runs.append([outer_train_indices, outer_test_indices, outer_loop_count])
 
         jobs = Parallel(n_jobs=parallel, prefer='processes')(delayed(run_parallel)(outer_run,
-                                                                                       splitter,
-                                                                                       random_state,
-                                                                                       n_targets,
-                                                                                       score_type,
-                                                                                       hyperparams,
-                                                                                       predictor,
-                                                                                       target,
-                                                                                       wanted,
-                                                                                       measures,
-                                                                                       nonnegative) for outer_run in np.array_split(outer_runs, parallel))
+                                                                                   splitter,
+                                                                                   random_state,
+                                                                                   n_targets,
+                                                                                   score_type,
+                                                                                   hyperparams,
+                                                                                   predictor,
+                                                                                   target,
+                                                                                   wanted,
+                                                                                   measures,
+                                                                                   nonnegative) for outer_run in np.array_split(outer_runs, parallel))
         for job in jobs:
             results += job
     else:
@@ -499,19 +503,20 @@ def run_outer_cross_validation_batch(splitter,
                                      nonnegative):
     """Conduct one outer cross-validated FR-RSA run.
 
-    For one outer cross-validation, all hyperparameters are evaluated in an
-    inner cross-validation, the best for each target is selected, and FRRSA is
-    performed on the outer train/test set.
+    For one outer cross-validation, all hyperparameters are evaluated in
+    an inner cross-validation, the best for each target is selected, and
+    FRRSA is performed on the outer train/test set.
 
     Parameters
     ----------
     splitter : str
-        How the data shall be split. If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up. Soft-deprecated.
+        How the data shall be split. If `random`, data is split randomly.
+        If `kfold`, a classical k-fold is set up.
+        Soft-deprecated.
     random_state : int
-        State of the randomness (defaults to `None`). Should only be set for
-        testing purposes. If set, leads to reproducible output across multiple
-        function calls.
+        State of the randomness (defaults to `None`). Should only be set
+        for testing purposes. If set, leads to reproducible output across
+        multiple function calls.
     n_targets : int
         Denotes the number of target RDMs.
     outer_train_indices : array_like
@@ -534,31 +539,30 @@ def run_outer_cross_validation_batch(splitter,
         A list of strings that indicate which output the user wants the
         function to return.
     measures : list
-        A list of two strings that indicate (dis-)similarity measures used for
-        the predictor and target.
+        A list of two strings that indicate the (dis-)similarity measures
+        used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
     current_predictions : ndarray
-        Predicted and test (dis-)similarities, respective targets, fold, and
-        conditions, for the current outer fold.
+        Predicted and test (dis-)similarities, respective targets, fold,
+        and conditions, for the current outer fold.
     y_regularized : ndarray
         Predicted (dis-)similarities for each target for the current outer fold.
     first_pair_obj : ndarray
-        The first condition of the condition pair to which the (dis-)similarities
-        belong to.
+        The first condition of the condition pair to which the
+        (dis-)similarities belong to.
     second_pair_obj : ndarray
-        The second condition of the condition pair to which the (dis-)similarities
-        belong to.
+        The second condition of the condition pair to which the
+        (dis-)similarities belong to.
     regularized_score : ndarray
-        Holds the the representational correspondency scores between each target
-        and the predictor.
+        Holds the the representational correspondency scores between
+        each target and the predictor.
     best_hyperparam : ndarray
         Holds the best hyperparameter for each target, for the current outer fold.
     """
-    # print("Check")
     inner_hyperparams_scores = start_inner_cross_validation(splitter,
                                                             random_state,
                                                             n_targets,
@@ -620,15 +624,16 @@ def run_parallel(outer_run,
     ----------
     outer_run : ndarray
         Holds sets of `outer_train_indices` and `outer_test_indices` with
-        `outer_loop_count` and `number_cores`. The amoung of sets depends on
-        the proportion of outer cross-validations and number of cores.
+        `outer_loop_count` and `number_cores`. The amoung of sets depends
+        on the proportion of outer cross-validations and number of cores.
     splitter : str
-        How the data shall be split. If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up.
+        How the data shall be split. If `random`, data is split randomly.
+        If `kfold`, a classical k-fold is set up.
+        Soft-deprecated.
     random_state : int
-        State of the randomness (defaults to `None`). Should only be set for
-        testing purposes. If set, leads to reproducible output across multiple
-        function calls.
+        State of the randomness (defaults to `None`). Should only be set
+        for testing purposes. If set, leads to reproducible output across
+        multiple function calls.
     n_targets : int
         Denotes the number of targets.
     score_type : str
@@ -645,15 +650,16 @@ def run_parallel(outer_run,
         A list of strings that indicate which output the user wants the
         function to return.
     measures : list
-        A list of two strings that indicate (dis-)similarity measures used for
-        the predictor and target.
+        A list of two strings that indicate the (dis-)similarity measures
+        used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
     results : list
-        Holds all results of the parallelized calls of `run_outer_cross_validation_batch`
+        Holds all results of the parallelized calls of
+        `run_outer_cross_validation_batch`.
     """
     results = []
     for batch in outer_run:
@@ -697,12 +703,13 @@ def start_inner_cross_validation(splitter,
     Parameters
     ----------
     splitter : str
-        How the data shall be split. If `random`, data
-        is split randomly. If `kfold`, a classical k-fold is set up. Soft-deprecated.
+        How the data shall be split. If `random`, data is split randomly.
+        If `kfold`, a classical k-fold is set up.
+        Soft-deprecated.
     random_state : int
-        State of the randomness (defaults to `None`). Should only be set for
-        testing purposes. If set, leads to reproducible output across multiple
-        function calls.
+        State of the randomness (defaults to `None`). Should only be set
+        for testing purposes. If set, leads to reproducible output across
+        multiple function calls.
     n_targets : int
         Denotes the number of targets.
     outer_train_indices : array_like
@@ -718,16 +725,16 @@ def start_inner_cross_validation(splitter,
     hyperparams : array-like
         The hyperparameter candidates to evaluate in the regularization scheme.
     measures : list
-        A list of two strings that indicate (dis-)similarity measures used for
-        the predictor and target.
+        A list of two strings that indicate the (dis-)similarity measures
+        used for the predictor and target.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
 
     Returns
     -------
     inner_hyperparams_scores : ndarray
-        Holds the score for each hyperparameter candidate, separately for each
-        target and inner cross-validation.
+        Holds the score for each hyperparameter candidate, separately
+        for each target and inner cross-validation.
     """
     n_hyperparams = len(hyperparams)
     inner_k, inner_reps = 5, 5
@@ -758,10 +765,11 @@ def evaluate_hyperparams(inner_hyperparams_scores,
     Parameters
     ----------
     inner_hyperparams_scores : ndarray
-        Holds the score for each hyperparameter candidate, separately for each
-        target and inner cross-validation.
+        Holds the score for each hyperparameter candidate, separately
+        for each target and inner cross-validation.
     hyperparams : array-like
-        The hyperparameter candidates to evaluate in the regularization scheme.
+        The hyperparameter candidates to evaluate in the regularization
+        scheme.
 
     Returns
     -------
@@ -779,9 +787,9 @@ def collapse_RDM(n_conditions,
                  predicted_matrix_counter):
     """Average RDM halves.
 
-    Collapse representational matrices along their diagonal, sum the respective
-    values, divide them by the counter, and reshape the resulting values back
-    to a symmetrical matrix.
+    Collapse representational matrices along their diagonal, sum the
+    respective values, divide them by the counter, and reshape the
+    resulting values back to a symmetrical matrix.
 
     Parameters
     ----------
@@ -797,9 +805,10 @@ def collapse_RDM(n_conditions,
     Returns
     -------
     predicted_matrix_re : ndarray
-        The reweighted predicted representational matrix averaged across outer
-        folds with shape (n_conditions, n_conditions, n_targets). The value `9999` denotes
-        condition pairs for which no (dis-)similarity was predicted.
+        The reweighted predicted representational matrix averaged across
+        outer folds with shape (n_conditions, n_conditions, n_targets).
+        The value `9999` denotes condition pairs for which no
+        (dis-)similarity was predicted.
     """
     idx_low = np.tril_indices(n_conditions, k=-1)
     idx_up = tuple([idx_low[1], idx_low[0]])
@@ -843,27 +852,27 @@ def fit_and_score(predictor,
     hyperparams : array_like
         Hyperparameters for which regularized model shall be fitted.
     measures : list
-        A list of two strings that indicate (dis-)similarity measures used for
-        the predictor and target.
+        A list of two strings that indicate (dis-)similarity measures
+        used for the predictor and target.
     place : str
-        Indication of whether this function is applied in inner our outer crossvalidation.
+        Indication of whether this function is applied in inner our outer cross-validation.
     nonnegative : bool
         Indication of whether the betas shall be constrained to be non-negative.
     random_state : int
-        State of the randomness (defaults to `None`). Should only be set for
-        testing purposes.
+        State of the randomness (defaults to `None`). Should only be set
+        for testing purposes.
 
     Returns
     -------
     scores : pd.DataFrame
-        Holds the the representational correspondency scores between each target
-        and the predictor.
+        Holds the the representational correspondency scores between
+        each target and the predictor.
     first_pair_idx : ndarray
-        The first condition of the condition pair to which the (dis-)similarities
-        belong to.
+        The first condition of the condition pair to which the
+        (dis-)similarities belong to.
     second_pair_idx : ndarray
-        The second condition of the condition pair to which the (dis-)similarities
-        belong to.
+        The second condition of the condition pair to which the
+        (dis-)similarities belong to.
     y_pred : ndarray
         Predicted (dis-)similarities for each target.
     y_test : ndarray
@@ -917,11 +926,11 @@ def compute_predictor_distance(predictor,
     X : ndarray
         The feature-specific (dis-)similarities for `predictor`.
     first_pair_idx : ndarray
-        The first condition of the condition pair to which the (dis-)similarities
-        belong to.
+        The first condition of the condition pair to which the
+        (dis-)similarities belong to.
     second_pair_idx : ndarray
-        The second condition of the condition pair to which the (dis-)similarities
-        belong to.
+        The second condition of the condition pair to which the
+        (dis-)similarities belong to.
     """
     if measure == 'dot':
         X, first_pair_idx, second_pair_idx = hadamard(predictor[:, idx])

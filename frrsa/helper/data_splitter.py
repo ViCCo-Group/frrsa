@@ -31,7 +31,7 @@ def data_splitter(choice, k, reps, random_state=None):
     """
     # Semantically, kfold's 'n_splits' is random's inverse of 'test_size'.
     # Further, kfold's 'n_repeats' is one factor determining random's 'n_splits'.
-    if choice == 'kfold': #SOFT-DEPRECATED
+    if choice == 'kfold':  # SOFT-DEPRECATED
         mysplit = RepeatedKFold(n_splits=k, n_repeats=reps,
                                 random_state=random_state)
     elif choice == 'random':
