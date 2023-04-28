@@ -26,6 +26,7 @@ def frrsa(target,
           preprocess,
           nonnegative,
           measures,
+          generalize=None,
           cv=[5, 10],
           hyperparams=None,
           score_type='pearson',
@@ -42,7 +43,7 @@ def frrsa(target,
     ----------
     target : ndarray
         The representational matrix (either an RDM or RSM) which shall
-        be predicted. Expected shape is (n_conditions, n_conditions, n_targets),
+        be predicted. Expected shape is (n_conditions, n_conditions,n_targets),
         where `n_targets` denotes the number of target matrices. If
         `n_targets == 1`, `targets` can be of shape (n_conditions, n_conditions).
     predictor : ndarray
@@ -68,6 +69,27 @@ def frrsa(target,
         'pearson_dis', 'spearman_dis', and 'decoding_dis', and its possible
         similarity measure options are 'cosine_sim', 'pearson_sim', 'spearman_sim',
         'decoding_sim', and 'spose_sim'.
+    generalize : dict, optional
+        Can hold additional predictors and targets which shall be used to
+        generalize the fitted statistical model to other predictor-target pairs.
+        The keys must be 'predictor' and 'target'. Each value must be a numpy
+        array. The expected shape for the array for the predictor is
+        (n_channels, n_conditions, n_predictors), where `n_predictors` denotes
+        the number of predictors. If `n_predictors == 1`, the array can be of
+        shape (n_channels, n_conditions). The expected shape for the array for
+        the target is (n_conditions, n_conditions, n_targets). If
+        `n_targets == 1`, `targets` can be of shape (n_conditions, n_conditions).
+        Note that it is assumed that each predictor-target pair belongs together,
+        i.e. the order in which you supply several predictors and targets
+        matters! Also, the number of additionally supplied predictors
+        and targets must therefore be equal. Further, each additional predictor
+        must have the same `n_channels`, which must also be equal to the
+        `n_channels` of the original `predictor`. Each predictor in `generalize`
+        will be reweighted using the betas as received when reweighting the
+        original `predictor` with the original `target`. Currently, `generalize`
+        only works if only one original `target` is supplied. It is silently
+        assumed that the additional predictor-target pairs in `generalize`
+        use the same measures as specified in `measures`.
     cv : list, optional
         A list of integers, where the first integer indicates the fold size of
         the outer cross-validation and the second integer indicates how often the
@@ -195,6 +217,35 @@ def frrsa(target,
               You might want to abort and choose a (dis-)similarity for both. \n\
               Continuing...')
 
+    # Check 'generalize'.
+    if (list(generalize.keys()) == ['predictor', 'target']) | \
+       (list(generalize.keys()) == ['target', 'predictor']):
+        sys.exit(f'The keys of "generalize" must be "predictor" and "target". \
+                  Yours are {generalize.keys()}.')
+    if (not isinstance(generalize['predictor'], np.ndarray)) | \
+       (not isinstance(generalize['target'], np.ndarray)):
+        sys.exit('The values of "generalize" must both be numpy arrays.')
+    if generalize['target'].shape[0] != generalize['target'].shape[1]:
+        sys.exit('The "target" in "generalize" is not a symmetrical matrix. \
+                  Its shape must be (n_conditions, n_conditions, n_targets) \
+                  or (n_conditions, n_conditions).')
+    if generalize['predictor'].shape[0] == generalize['predictor'].shape[1]:
+        print('Your "predictor" in "generalize" is symmetrical. It must not \
+               be a RDM or RSM. If it is, you should abort. Continuing...')
+    if (generalize['target'].ndim != generalize['predictor'].ndim) | \
+       (generalize['target'].ndim == 3 &
+          (generalize['target'].shape[2] != generalize['predictor'].shape[2])):
+        sys.exit('The number of additionally supplied predictors and targets \
+                  must be equal.')
+    if generalize['predictor'].shape[0] != predictor.shape[0]:
+        sys.exit('Each additional predictor must have as many channels as, \
+                  the original `predictor`.')
+    if (generalize is not None) & (target.ndim == 3):
+        print(f'Currently, `generalize` only works if only one original \
+               `target` is supplied. You supplied {target.shape[2]} targets. \
+               Normal frrsa will be conducted, but `generalize` will be \
+               ignored. Continuing...')
+
     # Check 'cv'.
     if type(cv) != list:
         sys.exit('The parameter "cv" must be a list.')
@@ -307,6 +358,30 @@ def frrsa(target,
 
     if 'predicted_matrix' in wanted:
         predicted_matrix = collapse_RDM(n_conditions, predicted_matrix, predicted_matrix_counter)
+
+    if (generalize is not None) & (target.ndim == 2):
+        outer_train_indices = list(range(n_conditions))
+
+        hyperparam_scores = start_inner_cross_validation(splitter,
+                                                         random_state,
+                                                         n_targets,
+                                                         outer_train_indices,
+                                                         predictor,
+                                                         target,
+                                                         score_type,
+                                                         hyperparams,
+                                                         measures,
+                                                         nonnegative)
+        best_hyperparam = evaluate_hyperparams(hyperparam_scores,
+                                               hyperparams)
+
+        # use "best_hyperparam" to fit betas to the whole dataset.
+        # apply those betas to each additional predictor in "generalize"
+        # and relate predictions to corresponding additional target in "generalize".
+        # which fitting func to use, "final_model" or "regularized_model"? Keep
+        # standardization of betas with regards to X_train in mind.
+
+
 
     scores['score'] = scores['score'].apply(np.arctanh)
     scores = scores.groupby(['target'])['score'].mean().reset_index()
