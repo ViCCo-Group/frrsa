@@ -79,7 +79,7 @@ def frrsa(target,
         shape (n_channels, n_conditions). The expected shape for the array for
         the target is (n_conditions, n_conditions, n_targets). If
         `n_targets == 1`, `targets` can be of shape (n_conditions, n_conditions).
-        Note that it is assumed that each predictor-target pair belongs together,
+        Note that it is currently assumed that each predictor-target pair belongs together,
         i.e. the order in which you supply several predictors and targets
         matters! Also, the number of additionally supplied predictors
         and targets must therefore be equal. Further, each additional predictor
@@ -245,6 +245,10 @@ def frrsa(target,
                `target` is supplied. You supplied {target.shape[2]} targets. \
                Normal frrsa will be conducted, but `generalize` will be \
                ignored. Continuing...')
+    try:
+        n_generalize = generalize['target'].shape[2]
+    except IndexError:
+        n_generalize = 1
 
     # Check 'cv'.
     if type(cv) != list:
@@ -360,12 +364,12 @@ def frrsa(target,
         predicted_matrix = collapse_RDM(n_conditions, predicted_matrix, predicted_matrix_counter)
 
     if (generalize is not None) & (target.ndim == 2):
-        outer_train_indices = list(range(n_conditions))
+        idx = list(range(n_conditions))
 
         hyperparam_scores = start_inner_cross_validation(splitter,
                                                          random_state,
                                                          n_targets,
-                                                         outer_train_indices,
+                                                         idx,
                                                          predictor,
                                                          target,
                                                          score_type,
@@ -374,14 +378,17 @@ def frrsa(target,
                                                          nonnegative)
         best_hyperparam = evaluate_hyperparams(hyperparam_scores,
                                                hyperparams)
-
-        # use "best_hyperparam" to fit betas to the whole dataset.
-        # apply those betas to each additional predictor in "generalize"
-        # and relate predictions to corresponding additional target in "generalize".
-        # which fitting func to use, "final_model" or "regularized_model"? Keep
-        # standardization of betas with regards to X_train in mind.
-
-
+        X, *_ = compute_predictor_distance(predictor, idx, measures[0])
+        y = flatten_matrix(target)
+        betas = final_model(X, y, best_hyperparam, nonnegative, random_state)
+        g_scores = np.zeros((n_generalize))
+        for pair in range(n_generalize):
+            g_target = generalize['target'][:, :, pair]
+            g_y = flatten_matrix(g_target)
+            g_predictor = generalize['predictor'][:, :, pair]
+            g_X, *_ = compute_predictor_distance(g_predictor, idx, measures[0])
+            g_predictions = betas[0] + (g_predictor @ betas[1:])
+            g_scores[pair] = scoring(g_y, g_predictions, score_type=score_type)
 
     scores['score'] = scores['score'].apply(np.arctanh)
     scores = scores.groupby(['target'])['score'].mean().reset_index()
